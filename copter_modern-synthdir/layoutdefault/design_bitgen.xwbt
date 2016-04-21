@@ -1,0 +1,7 @@
+INFILE=/edu/sebca553/Documents/copter_modern/copter_modern-synthdir/layoutdefault/design.ncd
+OUTFILE=/edu/sebca553/Documents/copter_modern/copter_modern-synthdir/layoutdefault/design.bit
+FAMILY=Spartan6
+PART=xc6slx16-3csg324
+WORKINGDIR=/edu/sebca553/Documents/copter_modern/copter_modern-synthdir/layoutdefault
+LICENSE=ISE
+USER_INFO=1777494980_210567422_043

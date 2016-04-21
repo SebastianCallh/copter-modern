@@ -1,0 +1,148 @@
+m255
+K3
+13
+cModel Technology
+Z0 d/edu/sebca553/Documents/copter_modern/VGA_lab-simdir
+Ekbd_enc
+Z1 w1461239921
+Z2 DPx4 ieee 11 numeric_std 0 22 =NSdli^?T5OD8;4F<blj<3
+Z3 DPx4 ieee 14 std_logic_1164 0 22 GH1=`jDDBJ=`LM;:Ak`kf2
+Z4 8../KBD_ENC.vhd
+Z5 F../KBD_ENC.vhd
+l0
+L15
+V9nNlm:830B0DoI2D@;`3b0
+Z6 OE;C;6.5c;42
+32
+o+acc
+Z7 tExplicit 1
+!s100 382IYRaNO?U?F>DOW14AG0
+Abehavioral
+R2
+R3
+DEx4 work 7 kbd_enc 0 22 9nNlm:830B0DoI2D@;`3b0
+l54
+L26
+VdY`?G2X15nDW<N2FA4G]=0
+!s100 AMjESBFicWaz2nmXh>nik2
+R6
+32
+Z8 Mx2 4 ieee 14 std_logic_1164
+Z9 Mx1 4 ieee 11 numeric_std
+o+acc
+R7
+Elab_tb
+Z10 w1461240131
+Z11 DPx4 ieee 18 std_logic_unsigned 0 22 hEMVMlaNCR^<OOoVNV;m90
+Z12 DPx4 ieee 15 std_logic_arith 0 22 GJbAT?7@hRQU9IQ702DT]2
+R3
+Z13 8../lab_tb.vhd
+Z14 F../lab_tb.vhd
+l0
+L6
+V^`:^^YKz=O;i?onehPXec0
+!s100 ;B<4dK=;_53Bkk6b54]zU3
+R6
+32
+o+acc
+R7
+Abehavioral
+R11
+R12
+R3
+DEx4 work 6 lab_tb 0 22 ^`:^^YKz=O;i?onehPXec0
+l17
+L9
+VCfJcX1QRCPn;^YijY2]dA2
+!s100 G2_[f9B=79T_ESojmZ9;C3
+R6
+32
+Z15 Mx3 4 ieee 14 std_logic_1164
+Mx2 4 ieee 15 std_logic_arith
+Mx1 4 ieee 18 std_logic_unsigned
+o+acc
+R7
+Epict_mem
+R1
+R2
+R3
+Z16 8../PICT_MEM.vhd
+Z17 F../PICT_MEM.vhd
+l0
+L15
+Vd86oXV^^cinNHOE=XmiU;0
+R6
+32
+o+acc
+R7
+!s100 K:k;G`QL<[L`0;[S18keW2
+Abehavioral
+R2
+R3
+DEx4 work 8 pict_mem 0 22 d86oXV^^cinNHOE=XmiU;0
+l39
+L31
+VQTX5S3Y6Hh`zVIbHB<7_V0
+!s100 GIF::E>GcUTl8TYhXnL_G2
+R6
+32
+R8
+R9
+o+acc
+R7
+Evga_lab
+R1
+R2
+R3
+Z18 8../VGA_lab.vhd
+Z19 F../VGA_lab.vhd
+l0
+L15
+Vc<5Ne`BS02b_G@07[6UTo3
+R6
+32
+o+acc
+R7
+!s100 7d_I5;>@]32ZUSSWaDaem0
+Abehavioral
+R2
+R3
+DEx4 work 7 vga_lab 0 22 c<5Ne`BS02b_G@07[6UTo3
+l79
+L29
+Vb4?VI8mUz6z>TSHRMBO^X0
+!s100 SbbdlR79jW_JGkafLK]LT1
+R6
+32
+R8
+R9
+o+acc
+R7
+Evga_motor
+Z20 w1461239919
+R2
+R3
+Z21 8../VGA_MOTOR/VGA_MOTOR.vhd
+Z22 F../VGA_MOTOR/VGA_MOTOR.vhd
+l0
+L15
+VBK6RX4ehYco:nhYDbo1z?1
+R6
+32
+o+acc
+R7
+!s100 n3DO2GTL8<CPVbT]dN7i=3
+Abehavioral
+R2
+R3
+DEx4 work 9 vga_motor 0 22 BK6RX4ehYco:nhYDbo1z?1
+l337
+L29
+VT>Zelk2C0U6m_TAIzUnlA1
+!s100 LWYXIik:216I:5;bD5J]U3
+R6
+32
+R8
+R9
+o+acc
+R7
