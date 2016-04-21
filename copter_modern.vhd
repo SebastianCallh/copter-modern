@@ -40,24 +40,24 @@ architecture Behavioral of copter_modern is
   end component;
 
   -- picture memory component
-  component PICT_MEM
+  component PIC_MEM
     port ( clk			: in std_logic;                         -- system clock
 	 -- port 1
-           we1		        : in std_logic;                         -- write enable
-           data_in1	        : in std_logic_vector(7 downto 0);      -- data in
-           data_out1	        : out std_logic_vector(7 downto 0);     -- data out
-           addr1	        : in unsigned(10 downto 0);             -- address
-	 -- port 2
-           we2			: in std_logic;                         -- write enable
-           data_in2	        : in std_logic_vector(7 downto 0);      -- data in
-           data_out2	        : out std_logic_vector(7 downto 0);     -- data out
-           addr2		: in unsigned(10 downto 0));            -- address
+           we		        : in std_logic;                         -- write enable
+           data_in	        : in std_logic_vector(7 downto 0);      -- data in
+           tile_x               : in unsigned(9 downto 0);              -- address
+           tile_y               : in unsigned(8 downto 0);              -- address
+           -- port 2
+           out_pixel	        : out std_logic_vector(7 downto 0);     -- data out
+           out_addr		: in unsigned(10 downto 0);             -- adress
+           collision            : out std_logic);
   end component;
 	
   -- VGA motor component
   component VGA_MOTOR
     port ( clk			: in std_logic;                         -- system clock
            rst			: in std_logic;                         -- reset
+           pixel                  : in std_logic_vector(7 downto 0);
            data			: in std_logic_vector(7 downto 0);      -- data
            addr			: out unsigned(10 downto 0);            -- address
            vgaRed		: out std_logic_vector(2 downto 0);     -- VGA red
@@ -73,19 +73,54 @@ architecture Behavioral of copter_modern is
   signal	we_s		: std_logic;                            -- write enable
 	
   -- intermediate signals between PICT_MEM and VGA_MOTOR
-  signal	data_out2_s     : std_logic_vector(7 downto 0);         -- data
-  signal	addr2_s		: unsigned(10 downto 0);                -- address
-	
+  signal	out_pixel       : std_logic_vector(7 downto 0) :="00011100";         -- data
+  signal	out_addr        : unsigned(10 downto 0);                -- address
+
+  -- intermediate signals between PIC_MEM and CPU
+  signal        pic_mem_we      : std_logic := '1';                     -- pic mem port 1 we
+  signal	tile_data       : std_logic_vector(7 downto 0);         -- tile type to save
+  
+  signal	tile_x          : std_logic_vector(9 downto 0);         -- tile-x where to save it
+  signal	tile_y          : std_logic_vector(8 downto 0);         -- tile-y where to save it
+  
+  signal	player_x        : std_logic_vector(7 downto 0);         -- players pixel-x
+  signal	player_y        : std_logic_vector(7 downto 0);         -- players pixel-y
+  
+  signal	collision       : std_logic := '0';                     -- collision interrupt flag
+
+  
 begin
 
   -- keyboard encoder component connection
-  U0 : KBD_ENC port map(clk=>clk, rst=>rst, PS2KeyboardCLK=>PS2KeyboardCLK, PS2KeyboardData=>PS2KeyboardData, data=>data_s, addr=>addr_s, we=>we_s);
+  U0 : KBD_ENC port map(clk=>clk,
+                        rst=>rst,
+                        PS2KeyboardCLK=>PS2KeyboardCLK,
+                        PS2KeyboardData=>PS2KeyboardData,
+                        data=>data_s,
+                        addr=>addr_s,
+                        we=>we_s);
 
-  -- picture memory component connection
-  U1 : PICT_MEM port map(clk=>clk, we1=>we_s, data_in1=>data_s, addr1=>addr_s, we2=>'0', data_in2=>"00000000", data_out2=>data_out2_s, addr2=>addr2_s);
-	
+-- picture memory component connection
+--  U1 : PIC_MEM port map(clk=>clk,
+--                        we=>pic_mem_we,
+--                        data_in=>tile_data,
+--                        tile_x=>tile_x,
+--                        tile_y=>tile_y,
+--                        out_pixel=>out_pixel,
+--                        out_addr=>out_addr,
+--                        collision=>collision);
+  
   -- VGA motor component connection
-  U2 : VGA_MOTOR port map(clk=>clk, rst=>rst, data=>data_out2_s, addr=>addr2_s, vgaRed=>vgaRed, vgaGreen=>vgaGreen, vgaBlue=>vgaBlue, Hsync=>Hsync, Vsync=>Vsync);
+  U2 : VGA_MOTOR port map(clk=>clk,
+                          data=>out_pixel,
+                          addr=>out_addr,
+                          pixel=>out_pixel,
+                          rst=>rst,
+                          vgaRed=>vgaRed,
+                          vgaGreen=>vgaGreen,
+                          vgaBlue=>vgaBlue,
+                          Hsync=>Hsync,
+                          Vsync=>Vsync);
 
 end Behavioral;
 
