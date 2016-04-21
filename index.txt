@@ -1,0 +1,117 @@
+----------------------------
+------ CPU PORT INDEX ------
+----------------------------
+
+No.	 Module		Port No.
+1	 PC		0001
+2   	 ASR		0010
+3   	 PMEM		0011
+4  	 ALU		0100
+5  	 ALU_RES	0101
+6   	 RES		0110
+7   	 IR		0111
+8   	 REG1		1000
+9   	 REG2		1001
+10  	 REG3		1010
+11  	 REG4		1011
+
+
+
+
+----------------------------
+------ MICRO  ADDRESS ------
+----------------------------
+
+|  TB  |  FB  | P | ALU |  SEQ |   uADR   |
+| XXXX | XXXX | X | XXX | XXXX | XXXXXXXX | 
+|23->20|19->16|15 |14>12|11->8 |   7->0   |
+
+----- TB/FB -----
+
+0000    NOP
+0001    PC
+0010    ASR
+0011    PMEM(AS
+	
+0100    ALU_RES
+0101    RES
+0110    IR(31 DOWNTO 16)
+0111	IR(15 DOWNTO 0)
+	
+1000    REG1
+1001    REG2
+1010    REG3
+1011    REG4
+	
+1100    
+1101    
+1110    
+1111
+
+
+------ ALU ------
+
+000    NOP
+001    ADD
+010    SUB
+011    NOT
+       
+100    AND
+101    OR
+110    XOR
+111    
+
+------ SEQ ------
+
+0000    micro_pc++
+0001    micro_pc = OP
+0010    micro_pc = MOD
+0011    micro_pc = 0
+	
+0100    micro_pc = micro_address  --  (micro_mem(micro_pc))(7 downto 0)
+0101    
+0110    
+0111	
+	
+1000    
+1001    
+1010    
+1011    
+	
+1100    
+1101    
+1110    
+1111	
+
+
+
+
+|  TB  |  FB  | P | ALU |  SEQ |   uADR   | := 24 BITS
+| XXXX | XXXX | X | XXX | XXXX | XXXXXXXX | 
+|23->20|19->16|15 |14>12|11->8 |   7->0   |
+
+
+----------------------------
+----- INSTRUCTIONS(IR) -----
+----------------------------
+
+|   OP   | MOD |FETCH NEXT ROW 
+| XXXXXX | XX  | X | ------- | 
+| 31->26 |25>24| 23| 22-> 16
+
+       ADDRESS
+| XXXX XXXX XXXX XXXX |
+|        15->0        |
+
+
+
+----------------------------
+------ 7-SEG DISPLAY  ------
+----------------------------
+
+
+     0
+     __
+ 5  |__|  1   (6 in the middle)
+ 4  |__|  2
+     3
