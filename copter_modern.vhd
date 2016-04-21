@@ -42,12 +42,10 @@ architecture Behavioral of copter_modern is
   -- picture memory component
   component PIC_MEM
     port ( clk			: in std_logic;                         -- system clock
-	 -- port 1
            we		        : in std_logic;                         -- write enable
-           data_in	        : in std_logic_vector(7 downto 0);      -- data in
+           tile_in	        : in std_logic_vector(7 downto 0);      -- data in
            tile_x               : in unsigned(9 downto 0);              -- address
            tile_y               : in unsigned(8 downto 0);              -- address
-           -- port 2
            out_pixel	        : out std_logic_vector(7 downto 0);     -- data out
            out_addr		: in unsigned(10 downto 0);             -- adress
            collision            : out std_logic);
@@ -57,9 +55,8 @@ architecture Behavioral of copter_modern is
   component VGA_MOTOR
     port ( clk			: in std_logic;                         -- system clock
            rst			: in std_logic;                         -- reset
-           pixel                  : in std_logic_vector(7 downto 0);
+           pixel                : in std_logic_vector(7 downto 0);
            data			: in std_logic_vector(7 downto 0);      -- data
-           addr			: out unsigned(10 downto 0);            -- address
            vgaRed		: out std_logic_vector(2 downto 0);     -- VGA red
            vgaGreen	        : out std_logic_vector(2 downto 0);     -- VGA green
            vgaBlue		: out std_logic_vector(2 downto 1);     -- VGA blue
@@ -92,7 +89,7 @@ architecture Behavioral of copter_modern is
 begin
 
   -- keyboard encoder component connection
-  U0 : KBD_ENC port map(clk=>clk,
+  KE : KBD_ENC port map(clk=>clk,
                         rst=>rst,
                         PS2KeyboardCLK=>PS2KeyboardCLK,
                         PS2KeyboardData=>PS2KeyboardData,
@@ -101,9 +98,9 @@ begin
                         we=>we_s);
 
 -- picture memory component connection
---  U1 : PIC_MEM port map(clk=>clk,
+--  PM : PIC_MEM port map(clk=>clk,
 --                        we=>pic_mem_we,
---                        data_in=>tile_data,
+--                        tile_in=>tile_data,
 --                        tile_x=>tile_x,
 --                        tile_y=>tile_y,
 --                        out_pixel=>out_pixel,
@@ -111,9 +108,8 @@ begin
 --                        collision=>collision);
   
   -- VGA motor component connection
-  U2 : VGA_MOTOR port map(clk=>clk,
+  VM : VGA_MOTOR port map(clk=>clk,
                           data=>out_pixel,
-                          addr=>out_addr,
                           pixel=>out_pixel,
                           rst=>rst,
                           vgaRed=>vgaRed,

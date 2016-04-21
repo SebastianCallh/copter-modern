@@ -15,7 +15,6 @@ use IEEE.NUMERIC_STD.ALL;               -- IEEE library for the unsigned type
 entity VGA_MOTOR is
   port ( clk			: in std_logic;
 	 data			: in std_logic_vector(7 downto 0);
-	 addr			: out unsigned(10 downto 0);
          pixel                  : in std_logic_vector(7 downto 0);
 	 rst			: in std_logic;
 	 vgaRed		        : out std_logic_vector(2 downto 0);
@@ -35,7 +34,6 @@ architecture Behavioral of VGA_MOTOR is
   signal	Clk25		: std_logic;			-- One pulse width 25 MHz signal
 		
   signal 	out_pixel       : std_logic_vector(7 downto 0);	-- Final pixel output
-  signal	tileAddr	: unsigned(10 downto 0);	-- Tile address
 
   signal        blank           : std_logic;                    -- blanking signal
 	
@@ -147,29 +145,17 @@ begin
 
   -- 640 480
   Blank <= '1' when Xpixel >= "1010000000" or Ypixel >= "111100000" else '0';
-  
-  -- Tile memory
-process(clk)
+
+  process(clk)
   begin
     if rising_edge(clk) then
       if (blank = '0') then
-        --tilePixel <= tileMem(to_integer(tileAddr));
         out_pixel <= std_logic_vector(pixel);
       else
         out_pixel <= (others => '0');
       end if;
     end if;
   end process;
-	
-
-
-  -- Tile memory address composite
-  --tileAddr <= unsigned(data(4 downto 0)) & Ypixel(4 downto 2) & Xpixel(4 downto 2);
-
-
-  -- Picture memory address composite
-  --addr <= to_unsigned(20, 7) * Ypixel(8 downto 5) + Xpixel(9 downto 5);
-
 
   -- VGA generation
   vgaRed(2) 	<= out_pixel(7);
