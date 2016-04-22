@@ -46,6 +46,10 @@ architecture Behavioral of CPU is
   signal o_flag : std_logic;
   signal c_flag : std_logic;
 
+
+  -- ALU help signal
+  signal alu_tmp : std_logic_vector(16 downto 0);
+  
   
   -- PMEM (Max is 65535 for 16 bit addresses)
   type ram_t is array (0 to 4096) of std_logic_vector(15 downto 0);
@@ -148,6 +152,10 @@ begin  -- Behavioral
     if rising_edge(clk) then
       case micro_instr(14 downto 12) is
         when "001" =>
+          alu_tmp <= std_logic_vector(signed(alu_res) + signed(data_bus));
+          
+                     
+
           alu_res <= std_logic_vector(signed(alu_res) + signed(data_bus));  --ADD
         when "010" =>
           alu_res <= std_logic_vector(signed(alu_res) - signed(data_bus));  --SUB
