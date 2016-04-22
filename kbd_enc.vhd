@@ -19,7 +19,8 @@ entity KBD_ENC is
          PS2KeyboardData	: in std_logic;			-- USB keyboard PS2 data
          data			: out std_logic_vector(7 downto 0);		-- tile data
          addr			: out unsigned(10 downto 0);	-- tile address
-         we			: out std_logic);		-- write enable
+         we			: out std_logic;                -- write enable
+         input                  : out std_logic);               -- collision flag
 end KBD_ENC;
 
 -- architecture
@@ -80,7 +81,6 @@ begin
 	
   PS2Clk_op <= (not PS2Clk_Q1) and (not PS2Clk_Q2);
 	
-
   
   -- PS2 data shift register
 
@@ -104,7 +104,12 @@ begin
   end process;
   
   ScanCode <= PS2Data_sr(8 downto 1);
-	
+
+  with ScanCode select
+    input <= '1' when x"29",	-- space
+             '0' when others;
+  
+  
   -- PS2 bit counter
   -- The purpose of the PS2 bit counter is to tell the PS2 state machine when to change state
 

@@ -21,7 +21,9 @@ entity copter_modern is
 	 vgaGreen               : out std_logic_vector(2 downto 0);     -- VGA green
 	 vgaBlue	        : out std_logic_vector(2 downto 1);     -- VGA blue
 	 PS2KeyboardCLK	        : in std_logic;                         -- PS2 clock
-	 PS2KeyboardData        : in std_logic);                        -- PS2 data
+	 PS2KeyboardData        : in std_logic;                         -- PS2 data
+         input                  : out std_logic);                        -- input flag
+
 end copter_modern;
 
 
@@ -36,7 +38,8 @@ architecture Behavioral of copter_modern is
 	   PS2KeyboardData      : in std_logic;				-- PS2 data
 	   data		        : out std_logic_vector(7 downto 0);	-- tile data
 	   addr			: out unsigned(10 downto 0);	        -- tile address
-	   we			: out std_logic);	                -- write enable
+	   we			: out std_logic;                        -- write enable
+           input                : out std_logic);	                
   end component;
 
   -- picture memory component
@@ -47,8 +50,7 @@ architecture Behavioral of copter_modern is
            tile_x               : in unsigned(9 downto 0);              -- address
            tile_y               : in unsigned(8 downto 0);              -- address
            out_pixel	        : out std_logic_vector(7 downto 0);     -- data out
-           out_addr		: in unsigned(10 downto 0);             -- adress
-           collision            : out std_logic);
+           out_addr		: in unsigned(10 downto 0));             -- adress
   end component;
 	
   -- VGA motor component
@@ -95,7 +97,8 @@ begin
                         PS2KeyboardData=>PS2KeyboardData,
                         data=>data_s,
                         addr=>addr_s,
-                        we=>we_s);
+                        we=>we_s,
+                        input=>input);
 
 -- picture memory component connection
 --  PM : PIC_MEM port map(clk=>clk,
