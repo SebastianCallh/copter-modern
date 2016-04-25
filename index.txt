@@ -31,7 +31,7 @@ No.	 Module		Port No.
 0000    NOP
 0001    PC
 0010    ASR
-0011    PMEM(AS
+0011    PMEM(ASR)
 	
 0100    ALU_RES
 0101    RES
