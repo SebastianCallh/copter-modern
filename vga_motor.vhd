@@ -29,9 +29,9 @@ end VGA_MOTOR;
 -- architecture
 architecture Behavioral of VGA_MOTOR is
 
-  signal	Xpixel	        : unsigned(10 downto 0);         -- Horizontal pixel counter
-  signal	Ypixel	        : unsigned(9 downto 0);		-- Vertical pixel counter
-  signal	ClkDiv	        : unsigned(1 downto 0);		-- Clock divisor, to generate 25 MHz signal
+  signal	Xpixel	        : unsigned(10 downto 0) := (others => '0');         -- Horizontal pixel counter
+  signal	Ypixel	        : unsigned(9 downto 0) := (others => '0');		-- Vertical pixel counter
+  signal	ClkDiv	        : unsigned(1 downto 0) := (others => '0');		-- Clock divisor, to generate 25 MHz signal
   signal	Clk25		: std_logic;			-- One pulse width 25 MHz signal
   signal 	out_pixel       : std_logic_vector(7 downto 0);	-- Final pixel output
   signal        blank           : std_logic;                    -- blanking signal
@@ -56,7 +56,7 @@ architecture Behavioral of VGA_MOTOR is
            tile_x         : in std_logic_vector(9 downto 0);
            tile_y         : in std_logic_vector(8 downto 0);
            player_x       : in integer;
-           player_y       : in integer;
+          player_y       : in integer;
            out_pixel	  : out std_logic_vector(7 downto 0);
            pixel_x        : in unsigned(10 downto 0);
            pixel_y        : in unsigned(9 downto 0);
@@ -106,10 +106,10 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
-      if Clk25 = '1' then      
+      if Clk25 = '1' then
         -- 800
-        if Xpixel = "1100100000" then
-          Xpixel <= "0000000000";
+        if Xpixel = 800 then
+          Xpixel <= (others => '0');
         else
           Xpixel <= Xpixel + 1;
         end if;
@@ -146,10 +146,10 @@ begin
     if rising_edge(clk) then
       if Clk25 = '1' then      
         -- 800
-        if Xpixel = "1100100000" then
+        if Xpixel = 800 then
           --521
-          if Ypixel = "1000010001" then
-            Ypixel <= "0000000000";
+          if Ypixel = 521 then
+            Ypixel <= (others => '0');
           else
             Ypixel <= Ypixel + 1;
           end if;
