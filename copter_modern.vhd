@@ -64,7 +64,7 @@ architecture Behavioral of copter_modern is
   end component;
 	
   -- intermediate signals between PICT_MEM and VGA_MOTOR
-  signal	out_pixel       : std_logic_vector(7 downto 0) :="00011100";         -- data
+  signal	out_pixel       : std_logic_vector(7 downto 0);         -- data
   signal	out_addr        : unsigned(10 downto 0);                -- address
 
   -- intermediate signals between PIC_MEM and CPU

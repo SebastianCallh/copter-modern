@@ -9,6 +9,8 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;            -- basic IEEE library
 use IEEE.NUMERIC_STD.ALL;               -- IEEE library for the unsigned type
+use IEEE.std_logic_unsigned.ALL;
+
 
 
 -- entity
@@ -24,20 +26,57 @@ entity VGA_MOTOR is
 	 Vsync		        : out std_logic);
 end VGA_MOTOR;
 
-
 -- architecture
 architecture Behavioral of VGA_MOTOR is
 
-  signal	Xpixel	        : unsigned(9 downto 0);         -- Horizontal pixel counter
+  signal	Xpixel	        : unsigned(10 downto 0);         -- Horizontal pixel counter
   signal	Ypixel	        : unsigned(9 downto 0);		-- Vertical pixel counter
   signal	ClkDiv	        : unsigned(1 downto 0);		-- Clock divisor, to generate 25 MHz signal
   signal	Clk25		: std_logic;			-- One pulse width 25 MHz signal
-		
   signal 	out_pixel       : std_logic_vector(7 downto 0);	-- Final pixel output
-
   signal        blank           : std_logic;                    -- blanking signal
-	
+
+
+  --temporary signals to only test pushing data from memory to scre
+  -- port 1
+  signal data_in	: std_logic_vector(0 downto 0) := "0";
+  signal tile_x         : std_logic_vector(9 downto 0) := "1010101010";
+  signal tile_y         : std_logic_vector(8 downto 0) := "101010101";
+  signal player_x       : integer := 0;
+  signal player_y       : integer := 0;
+  -- port 2
+  signal out_addr       : std_logic_vector(10 downto 0) := "10101010101";
+  signal collision      : std_logic := '0';
+  signal pixel_from_pic_mem : std_logic_vector(7 downto 0);
+
+  component ett_annat_pic_mem is
+    port ( clk		: in std_logic;
+           we		: in std_logic;
+           data_in	: in std_logic_vector(0 downto 0);
+           tile_x         : in std_logic_vector(9 downto 0);
+           tile_y         : in std_logic_vector(8 downto 0);
+           player_x       : in integer;
+           player_y       : in integer;
+           out_pixel	  : out std_logic_vector(7 downto 0);
+           pixel_x        : in unsigned(10 downto 0);
+           pixel_y        : in unsigned(9 downto 0);
+           collision      : out std_logic);
+
+  end component;
 begin
+  
+  PM : ett_annat_pic_mem port map (clk=>clk,
+                                   we=>'1',
+                                   data_in=>data_in,
+                                   tile_x=>tile_x,
+                                   tile_y=>tile_y,
+                                   player_x=>player_x,
+                                   player_y=>player_y,
+                                   out_pixel=>pixel_from_pic_mem,
+                                   pixel_x=>Xpixel,
+                                   pixel_y=>Ypixel,
+                                   collision=>collision);
+    
   -- Clock divisor
   -- Divide system clock (100 MHz) by 4
   process(clk)
@@ -150,7 +189,7 @@ begin
   begin
     if rising_edge(clk) then
       if (blank = '0') then
-        out_pixel <= std_logic_vector(pixel);
+        out_pixel <= pixel_from_pic_mem;
       else
         out_pixel <= (others => '0');
       end if;
