@@ -41,17 +41,17 @@ architecture Behavioral of ett_annat_pic_mem is
   
   -- 8x8 Tile grid (640 / 8) * (480 / 8) = 80 * 60 = 4800 => 4096
   type grid_ram is array (0 to 4095) of std_logic_vector(0 downto 0);
-  signal grid_mem : grid_ram := ("1", "1", "1", "0", "1", "1", "1", others => "0");
+  signal grid_mem : grid_ram := (others => "0");
 
   -- 16x16 Sprite memory 16*16 = 256
   type sprite_ram is array (0 to 255) of std_logic_vector(7 downto 0);
   signal sprite_mem : sprite_ram := (others => "11000011");
 
   signal tile_addr : std_logic_vector(0 downto 0);
-  signal grid_coord_x : unsigned(6 downto 0); -- x tile coordinate
-  signal grid_coord_y : unsigned(5 downto 0); -- y tile coordinate
-  signal tile_sub_x : unsigned(3 downto 0); -- x pixel in the tile
-  signal tile_sub_y : unsigned(3 downto 0); -- y pixel in the tile
+  signal grid_coord_x : unsigned(7 downto 0); -- x tile coordinate
+  signal grid_coord_y : unsigned(6 downto 0); -- y tile coordinate
+  signal tile_sub_x : unsigned(2 downto 0); -- x pixel in the tile
+  signal tile_sub_y : unsigned(2 downto 0); -- y pixel in the tile
   
   -- Tile_memory type
   type tile_ram is array (0 to 127) of std_logic_vector(7 downto 0);
@@ -76,10 +76,10 @@ architecture Behavioral of ett_annat_pic_mem is
 
 begin
 
-  grid_coord_x <= pixel_x(10 downto 4);
-  grid_coord_y <= pixel_y(9 downto 4);
-  tile_sub_x <= pixel_x(3 downto 0);
-  tile_sub_y <= pixel_y(3 downto 0);
+  grid_coord_x <= pixel_x(10 downto 3);
+  grid_coord_y <= pixel_y(9 downto 3);
+  tile_sub_x <= pixel_x(2 downto 0);
+  tile_sub_y <= pixel_y(2 downto 0);
 
   --grid memory
   process(clk)
@@ -117,6 +117,8 @@ begin
         else
           sprite_pixel <= x"00";
         end if;
+      else
+        sprite_pixel <= x"00";
       end if;
     end if;
   end process;
