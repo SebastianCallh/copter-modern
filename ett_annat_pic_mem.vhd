@@ -29,7 +29,6 @@ architecture Behavioral of ett_annat_pic_mem is
   signal tile_pixel : std_logic_vector(7 downto 0);
   signal sprite_pixel : std_logic_vector(7 downto 0);
   signal background_pixel : std_logic_vector(7 downto 0) := "00000011";
-  signal addr : unsigned(10 downto 0);  --adress to pixel in pixel tile
 
   constant GRID_HEIGHT : integer := 60;
   constant GRID_WIDTH : integer := 80;
@@ -41,7 +40,7 @@ architecture Behavioral of ett_annat_pic_mem is
   
   -- 8x8 Tile grid (640 / 8) * (480 / 8) = 80 * 60 = 4800 => 4096
   type grid_ram is array (0 to 4095) of std_logic_vector(0 downto 0);
-  signal grid_mem : grid_ram := (others => "0");
+  signal grid_mem : grid_ram := ("1", "1", "1", others => "0");
 
   -- 16x16 Sprite memory 16*16 = 256
   type sprite_ram is array (0 to 255) of std_logic_vector(7 downto 0);
@@ -52,7 +51,8 @@ architecture Behavioral of ett_annat_pic_mem is
   signal grid_coord_y : unsigned(6 downto 0); -- y tile coordinate
   signal tile_sub_x : unsigned(2 downto 0); -- x pixel in the tile
   signal tile_sub_y : unsigned(2 downto 0); -- y pixel in the tile
-  
+  signal tmp_tile_addr : integer;
+    
   -- Tile_memory type
   type tile_ram is array (0 to 127) of std_logic_vector(7 downto 0);
   signal tile_mem : tile_ram := 
@@ -80,7 +80,8 @@ begin
   grid_coord_y <= pixel_y(9 downto 3);
   tile_sub_x <= pixel_x(2 downto 0);
   tile_sub_y <= pixel_y(2 downto 0);
-
+  tmp_tile_addr <= (conv_integer(tile_addr) * TILE_SIZE * TILE_SIZE) + (to_integer(tile_sub_y) * TILE_SIZE) + to_integer(tile_sub_x);
+  
   --grid memory
   process(clk)
     begin
@@ -91,15 +92,14 @@ begin
                     conv_integer(tile_x)) <= data_in;
         end if;
       end if;
-      tile_addr <= grid_mem(to_integer(grid_coord_y * TILE_SIZE + grid_coord_x));
+      tile_addr <= grid_mem(to_integer((grid_coord_y * TILE_SIZE) + grid_coord_x));
     end process;
  
   --tile memory
   process(clk)
   begin
     if rising_edge(clk) then
-      tile_pixel <= tile_mem(conv_integer(tile_addr) +
-                             to_integer(tile_sub_y * TILE_SIZE + tile_sub_x));
+      tile_pixel <= tile_mem(tmp_tile_addr);
     end if;
   end process;
 
@@ -118,7 +118,7 @@ begin
           sprite_pixel <= x"00";
         end if;
       else
-        sprite_pixel <= x"00";
+          sprite_pixel <= x"00";
       end if;
     end if;
   end process;

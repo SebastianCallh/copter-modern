@@ -96,10 +96,10 @@ begin
                           Vsync=>Vsync);
 
   -- CPU connector
-  CP : CPU port map (clk => clk,
-                     collision=>collision,
-                     reset=>rst,
-                     input=>PS2KeyboardData);
+  --CP : CPU port map (clk => clk,
+  --                   collision=>collision,
+  --                   reset=>rst,
+  --                   input=>PS2KeyboardData);
 
 end Behavioral;
 
