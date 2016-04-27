@@ -46,6 +46,15 @@ architecture Behavioral of CPU is
   signal o_flag : std_logic;
   signal c_flag : std_logic;
 
+
+
+  -- Alias
+  alias TO_BUS : std_logic_vector(3 downto 0) is micro_instr(23 downto 20);         -- to bus
+  alias FROM_BUS : std_logic_vector(3 downto 0) is micro_instr(19 downto 16);         -- from bus
+  alias P_BIT : std_logic is micro_instr(15);                                       -- p bit
+  alias ALU_OP : std_logic_vector(2 downto 0) is micro_instr(14 downto 12);     -- alu_op
+  alias SEQ : std_logic_vector(3 downto 0) is micro_instr(11 downto 8);         -- seq
+  alias MICRO_ADR : std_logic_vector(7 downto 0) is micro_instr(7 downto 0);    -- micro address
   
   -- PMEM (Max is 65535 for 16 bit addresses)
   type ram_t is array (0 to 4096) of std_logic_vector(15 downto 0);
@@ -71,9 +80,107 @@ architecture Behavioral of CPU is
 
   
 begin  -- Behavioral
+
+  -- pc
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if FROM_BUS = "0001" then
+        pc <= data_bus;
+      end if;
+
+      if P_BIT = '1' then
+        pc <= std_logic_vector(unsigned(pc) + 1);
+      end if;
+    end if;
+  end process;
+
+  -- asr
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if FROM_BUS = "0010" then
+        asr <= data_bus;
+      end if;
+    end if;
+  end process;
+
+  -- pmem
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if FROM_BUS = "0011" then
+       pmem(to_integer(unsigned(asr))) <= data_bus;
+      end if;
+    end if;
+  end process;
+
+  -- res
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if FROM_BUS = "0101" then
+        res <= data_bus;
+      end if;
+    end if;
+  end process;
+
+  -- ir
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if FROM_BUS = "0110" then
+        ir(31 downto 16) <= data_bus;
+      elsif FROM_BUS = "0111" then
+        ir(15 downto 0) <= data_bus;
+      end if;
+      
+    end if;
+  end process;
+
+  -- reg1
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if FROM_BUS = "1000" then
+        reg1 <= data_bus;
+      end if;
+    end if;
+  end process;
+
+  -- reg2
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if FROM_BUS = "1001" then
+        reg2 <= data_bus;
+      end if;
+    end if;
+  end process;
+
+  -- reg3
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if FROM_BUS = "1010" then
+        reg3 <= data_bus;
+      end if;
+    end if;
+  end process;
+
+  -- reg4
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if FROM_BUS = "1011" then
+        reg4 <= data_bus;
+      end if;
+    end if;
+  end process;
+
   
   -- Pushing data TO the bus
-  with micro_instr(23 downto 20) select
+  with TO_BUS select
     data_bus <= pc when "0001",    
                 asr when "0010",
                 pmem(to_integer(unsigned(asr))) when "0011",
@@ -87,37 +194,6 @@ begin  -- Behavioral
                 reg4 when "1011",
                 data_bus when others;
 
-  -- Pulling data FROM the bus
-  process(clk)
-  begin
-    if rising_edge(clk) then 
-      case micro_instr(19 downto 16) is
-        when "0001" =>
-          pc <= data_bus;
-        when "0010" =>
-          asr <= data_bus;
-        when "0011" =>
-          pmem(to_integer(unsigned(asr))) <= data_bus;
-        when "0100" =>
-          alu_res <= data_bus;
-        when "0101" =>
-          res <= data_bus;
-        when "0110" =>
-          ir(31 downto 16) <= data_bus;
-        when "0111" =>
-          ir(15 downto 0) <= data_bus;
-        when "1000" =>
-          reg1 <= data_bus;
-        when "1001" =>
-          reg2 <= data_bus;
-        when "1010" =>
-          reg3 <= data_bus;
-        when "1011" =>
-          reg4 <= data_bus;
-        when others => null;
-      end case;
-    end if;
-  end process;
 
 
   -- micro_pc
@@ -142,12 +218,12 @@ begin  -- Behavioral
   end process;
 
 
-  -- ALU
+  -- alu_res
   process(clk)
   begin
     if rising_edge(clk) then
-      case micro_instr(14 downto 12) is
-        when "001" =>
+      case ALU_OP is
+        when "001" =>             
           alu_res <= std_logic_vector(signed(alu_res) + signed(data_bus));  --ADD
         when "010" =>
           alu_res <= std_logic_vector(signed(alu_res) - signed(data_bus));  --SUB

@@ -49,6 +49,17 @@ architecture Behavioral of copter_modern is
            Hsync		: out std_logic;                        -- horizontal sync
            Vsync		: out std_logic);                       -- vertical sync
   end component;
+
+
+  -- CPU
+  component CPU
+    port ( clk                 : in std_logic;                          -- systen clock
+           collision           : in std_logic;
+           reset               : in std_logic;
+           input               : in std_logic                           -- keypress input
+       );
+           
+  end component;
 	
   -- intermediate signals between PICT_MEM and VGA_MOTOR
   --signal	out_pixel       : std_logic_vector(7 downto 0);         -- data
@@ -83,6 +94,12 @@ begin
                           vgaBlue=>vgaBlue,
                           Hsync=>Hsync,
                           Vsync=>Vsync);
+
+  -- CPU connector
+  CP : CPU port map (clk => clk,
+                     collision=>collision,
+                     reset=>rst,
+                     input=>PS2KeyboardData);
 
 end Behavioral;
 
