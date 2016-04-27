@@ -38,24 +38,11 @@ architecture Behavioral of copter_modern is
 	   PS2KeyboardData      : in std_logic;				-- PS2 data
            input                : out std_logic);	                
   end component;
-
-  -- picture memory component
-  component PIC_MEM
-    port ( clk			: in std_logic;                         -- system clock
-           we		        : in std_logic;                         -- write enable
-           tile_in	        : in std_logic_vector(7 downto 0);      -- data in
-           tile_x               : in unsigned(9 downto 0);              -- address
-           tile_y               : in unsigned(8 downto 0);              -- address
-           out_pixel	        : out std_logic_vector(7 downto 0);     -- data out
-           out_addr		: in unsigned(10 downto 0));             -- adress
-  end component;
 	
   -- VGA motor component
   component VGA_MOTOR
     port ( clk			: in std_logic;                         -- system clock
            rst			: in std_logic;                         -- reset
-           pixel                : in std_logic_vector(7 downto 0);
-           data			: in std_logic_vector(7 downto 0);      -- data
            vgaRed		: out std_logic_vector(2 downto 0);     -- VGA red
            vgaGreen	        : out std_logic_vector(2 downto 0);     -- VGA green
            vgaBlue		: out std_logic_vector(2 downto 1);     -- VGA blue
@@ -64,8 +51,8 @@ architecture Behavioral of copter_modern is
   end component;
 	
   -- intermediate signals between PICT_MEM and VGA_MOTOR
-  signal	out_pixel       : std_logic_vector(7 downto 0);         -- data
-  signal	out_addr        : unsigned(10 downto 0);                -- address
+  --signal	out_pixel       : std_logic_vector(7 downto 0);         -- data
+  --signal	out_addr        : unsigned(10 downto 0);                -- address
 
   -- intermediate signals between PIC_MEM and CPU
   signal        pic_mem_we      : std_logic := '1';                     -- pic mem port 1 we
@@ -78,7 +65,6 @@ architecture Behavioral of copter_modern is
   signal	player_y        : std_logic_vector(7 downto 0);         -- players pixel-y
   
   signal	collision       : std_logic := '0';                     -- collision interrupt flag
-
   
 begin
 
@@ -88,21 +74,9 @@ begin
                         PS2KeyboardCLK=>PS2KeyboardCLK,
                         PS2KeyboardData=>PS2KeyboardData,
                         input=>input);
-
--- picture memory component connection
---  PM : PIC_MEM port map(clk=>clk,
---                        we=>pic_mem_we,
---                        tile_in=>tile_data,
---                        tile_x=>tile_x,
---                        tile_y=>tile_y,
---                        out_pixel=>out_pixel,
---                        out_addr=>out_addr,
---                        collision=>collision);
   
   -- VGA motor component connection
   VM : VGA_MOTOR port map(clk=>clk,
-                          data=>out_pixel,
-                          pixel=>out_pixel,
                           rst=>rst,
                           vgaRed=>vgaRed,
                           vgaGreen=>vgaGreen,
