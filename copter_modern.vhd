@@ -1,9 +1,4 @@
---------------------------------------------------------------------------------
--- VGA lab
--- Anders Nilsson
--- 16-dec-2015
--- Version 1.0
-
+-- copter_modern
 
 -- library declaration
 library IEEE;
@@ -17,12 +12,12 @@ entity copter_modern is
 	 rst                    : in std_logic;                         -- reset
 	 Hsync	                : out std_logic;                        -- horizontal sync
 	 Vsync	                : out std_logic;                        -- vertical sync
-	 vgaRed	                : out	std_logic_vector(2 downto 0);   -- VGA red
+	 vgaRed	                : out std_logic_vector(2 downto 0);     -- VGA red
 	 vgaGreen               : out std_logic_vector(2 downto 0);     -- VGA green
 	 vgaBlue	        : out std_logic_vector(2 downto 1);     -- VGA blue
 	 PS2KeyboardCLK	        : in std_logic;                         -- PS2 clock
 	 PS2KeyboardData        : in std_logic;                         -- PS2 data
-         input                  : out std_logic);                        -- input flag
+         keypress               : out std_logic);                       -- input flag
 
 end copter_modern;
 
@@ -47,7 +42,10 @@ architecture Behavioral of copter_modern is
            vgaGreen	        : out std_logic_vector(2 downto 0);     -- VGA green
            vgaBlue		: out std_logic_vector(2 downto 1);     -- VGA blue
            Hsync		: out std_logic;                        -- horizontal sync
-           Vsync		: out std_logic);                       -- vertical sync
+           Vsync		: out std_logic;                        -- vertical sync
+           player_x             : in integer;
+           player_y             : in integer;
+           collision            : out std_logic);
   end component;
 
 
@@ -56,35 +54,37 @@ architecture Behavioral of copter_modern is
     port ( clk                 : in std_logic;                          -- systen clock
            collision           : in std_logic;
            reset               : in std_logic;
-           input               : in std_logic                           -- keypress input
-       );
-           
+           player_x            : out integer;
+           player_y            : out integer;
+           input               : in std_logic);                          -- keypress input
   end component;
 	
   -- intermediate signals between PICT_MEM and VGA_MOTOR
   --signal	out_pixel       : std_logic_vector(7 downto 0);         -- data
   --signal	out_addr        : unsigned(10 downto 0);                -- address
 
-  -- intermediate signals between PIC_MEM and CPU
+  -- intermediate signals between VGA_MOTOR and CPU
   signal        pic_mem_we      : std_logic := '1';                     -- pic mem port 1 we
   signal	tile_data       : std_logic_vector(7 downto 0);         -- tile type to save
   
   signal	tile_x          : std_logic_vector(9 downto 0);         -- tile-x where to save it
   signal	tile_y          : std_logic_vector(8 downto 0);         -- tile-y where to save it
   
-  signal	player_x        : std_logic_vector(7 downto 0);         -- players pixel-x
-  signal	player_y        : std_logic_vector(7 downto 0);         -- players pixel-y
+  signal	player_x        : integer;                              -- players pixel-x
+  signal	player_y        : integer;                              -- players pixel-y
   
-  signal	collision       : std_logic := '0';                     -- collision interrupt flag
+  signal	collision       : std_logic;                            -- collision interrupt flag
+  signal        input_local     : std_logic;                            -- input (from KBD_ENC to CPU)
   
 begin
 
+  keypress <= input_local;
   -- keyboard encoder component connection
   KE : KBD_ENC port map(clk=>clk,
                         rst=>rst,
                         PS2KeyboardCLK=>PS2KeyboardCLK,
                         PS2KeyboardData=>PS2KeyboardData,
-                        input=>input);
+                        input=>input_local);
   
   -- VGA motor component connection
   VM : VGA_MOTOR port map(clk=>clk,
@@ -92,14 +92,19 @@ begin
                           vgaRed=>vgaRed,
                           vgaGreen=>vgaGreen,
                           vgaBlue=>vgaBlue,
+                          player_x=>player_x,
+                          player_y=>player_y,
+                          collision=>collision,
                           Hsync=>Hsync,
                           Vsync=>Vsync);
 
   -- CPU connector
-  --CP : CPU port map (clk => clk,
-  --                   collision=>collision,
-  --                   reset=>rst,
-  --                   input=>PS2KeyboardData);
-
+  CP : CPU port map(clk=>clk,
+                    collision=>collision,
+                    reset=>rst,
+                    player_x=>player_x,
+                    player_y=>player_y,
+                    input=>input_local);
+  
 end Behavioral;
 
