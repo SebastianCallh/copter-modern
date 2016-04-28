@@ -8,11 +8,12 @@ use IEEE.NUMERIC_STD.ALL;               -- IEEE library for the unsigned type
 
 
 entity CPU is
-  port ( clk : in std_logic;
-         collision : in std_logic;
-         reset : in std_logic;
-         input : in std_logic
-    );
+    port ( clk                 : in std_logic;                          -- systen clock
+           collision           : in std_logic;
+           reset               : in std_logic;
+           player_x            : out integer;
+           player_y            : out integer;
+           input               : in std_logic);   
     
  
 end CPU;
@@ -23,23 +24,31 @@ architecture Behavioral of CPU is
   -- Signals
   signal data_bus : std_logic_vector(15 downto 0);
   signal pc : std_logic_vector(15 downto 0);
-  signal asr : std_logic_vector(15 downto 0);
+  signal asr : std_logic_vector(15 downto 0) := "0000000000000000";
   signal alu_input : signed(15 downto 0);
-  signal alu_res : std_logic_vector(15 downto 0);
-  signal res : std_logic_vector(15 downto 0);
+  signal alu_res : std_logic_vector(15 downto 0) := "0000000000000000";
+  signal res : std_logic_vector(15 downto 0) := "0000000000000001";
   signal ir : std_logic_vector(31 downto 0);
 
   -- Registers
-  signal reg1 : std_logic_vector(15 downto 0);
+  signal reg1 : std_logic_vector(15 downto 0) := "0000001000000000";
   signal reg2 : std_logic_vector(15 downto 0);
   signal reg3 : std_logic_vector(15 downto 0);
   signal reg4 : std_logic_vector(15 downto 0);
 
   -- Micro
   signal micro_instr : std_logic_vector(23 downto 0);
-  signal micro_pc : std_logic_vector(7 downto 0);
+  signal micro_pc : std_logic_vector(7 downto 0) := "00000000";
 
 
+   -- ALU signals
+  signal alu_add : std_logic_vector(16 downto 0);
+  signal alu_sub : std_logic_vector(16 downto 0);
+  signal alu_not : std_logic_vector(15 downto 0);
+  signal alu_and : std_logic_vector(15 downto 0);
+  signal alu_or : std_logic_vector(15 downto 0);
+  signal alu_xor : std_logic_vector(15 downto 0);
+  
   -- Flags
   signal n_flag : std_logic;
   signal z_flag : std_logic;
@@ -47,22 +56,39 @@ architecture Behavioral of CPU is
   signal c_flag : std_logic;
 
 
-
+  -- Constants (Variables)
+  signal X_POS : std_logic_vector(15 downto 0) := "0000000000000000";
+  signal Y_POS : std_logic_vector(15 downto 0) := "0000000000000001";
+  
   -- Alias
-  alias TO_BUS : std_logic_vector(3 downto 0) is micro_instr(23 downto 20);         -- to bus
-  alias FROM_BUS : std_logic_vector(3 downto 0) is micro_instr(19 downto 16);         -- from bus
-  alias P_BIT : std_logic is micro_instr(15);                                       -- p bit
+  alias TO_BUS : std_logic_vector(3 downto 0) is micro_instr(23 downto 20);     -- to bus
+  alias FROM_BUS : std_logic_vector(3 downto 0) is micro_instr(19 downto 16);   -- from bus
+  alias P_BIT : std_logic is micro_instr(15);                                   -- p bit
   alias ALU_OP : std_logic_vector(2 downto 0) is micro_instr(14 downto 12);     -- alu_op
   alias SEQ : std_logic_vector(3 downto 0) is micro_instr(11 downto 8);         -- seq
   alias MICRO_ADR : std_logic_vector(7 downto 0) is micro_instr(7 downto 0);    -- micro address
   
   -- PMEM (Max is 65535 for 16 bit addresses)
   type ram_t is array (0 to 4096) of std_logic_vector(15 downto 0);
-  signal pmem : ram_t := (others => "0000000000000000");
+  signal pmem : ram_t := ("0000000001000000",
+                          "0000000000000010",
+                          others => "0000000000000000");
 
   -- micro-MEM (Max is 255 for 8 bit addresses)
   type micro_mem_t is array (0 to 255) of std_logic_vector(23 downto 0);
-  signal micro_mem : micro_mem_t := (others => "000000000000000000000000");
+  signal micro_mem : micro_mem_t := ("001101000000000000000000",  -- 0
+                                     "010100000001000000000000",  -- 1
+                                     "010000110000000000000000",  -- 2
+                                     "100010010000000000000000",  -- reg1 > reg2
+                                     "100010100000000000000000",  -- reg1 > reg3
+                                     "101001000000000000000000",  -- reg3 > alu_res
+                                     "010100000010000000000000",  -- alu -= res
+                                     "010010100000011100000110",  -- jmp if z=0
+                                     "100101000000000000000000",  -- reg2 > alu_res
+                                     "010100000010000000000000",  -- alu -= res
+                                     "010010010000011100000100",  -- 6
+                                     "000000000000010000000000",  -- 7
+                                     others => "000000000000000000000000");
 
   -- ROM (mod) (Includes all 4 mods, need to be updated with correct micro-addresses)
   type mod_rom_t is array (3 downto 0) of std_logic_vector(7 downto 0);
@@ -78,9 +104,26 @@ architecture Behavioral of CPU is
                                  x"00",
                                  x"00");
 
+
+
+
   
 begin  -- Behavioral
 
+
+
+  
+  process(clk)
+  begin
+    if rising_edge(clk) then
+     player_x <= to_integer(unsigned(pmem(to_integer(unsigned(X_POS))))) mod 1024;
+     player_y <= 200;
+    end if;
+  end process;
+  
+  -- fetching micro_instr
+  micro_instr <= micro_mem(to_integer(unsigned(micro_pc)));
+  
   -- pc
   process(clk)
   begin
@@ -195,22 +238,62 @@ begin  -- Behavioral
                 data_bus when others;
 
 
-
+  
   -- micro_pc
   process(clk)
   begin
     if rising_edge(clk) then
-      if micro_mem(to_integer(unsigned(micro_pc)))(11 downto 8) = "0000"  then  -- micro_pc += 1
+      if SEQ = "0000"  then    -- micro_pc += 1
         micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
         
-      elsif micro_mem(to_integer(unsigned(micro_pc)))(11 downto 8) = "0001"  then --micro_pc = op
+      elsif SEQ = "0001"  then -- micro_pc = op
         micro_pc <= op_rom(to_integer(unsigned(ir(31 downto 26))));
         
-      elsif micro_mem(to_integer(unsigned(micro_pc)))(11 downto 8) = "0010"  then --micro_pc = mod
+      elsif SEQ = "0010"  then --micro_pc = mod
          micro_pc <= mod_rom(to_integer(unsigned(ir(31 downto 26))));
          
-      elsif micro_mem(to_integer(unsigned(micro_pc)))(11 downto 8) = "0011"  then --micro_pc = 0
+      elsif SEQ = "0011"  then --micro_pc = 0
         micro_pc <= "00000000";
+
+      elsif SEQ = "0100"  then --micro_pc = MICRO_ADR
+        micro_pc <= MICRO_ADR;
+        
+      elsif SEQ = "0101"  then --jmp if Z = 1
+        if z_flag = '1' then
+          micro_pc <= MICRO_ADR;
+        else
+          micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
+        end if;
+
+      elsif SEQ = "0110"  then --jmp if N = 1
+        if n_flag = '1' then
+          micro_pc <= MICRO_ADR;
+        else
+          micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
+        end if;
+
+      elsif SEQ = "0111"  then --jmp if Z = 0
+        if z_flag = '0' then
+          micro_pc <= MICRO_ADR;
+        else
+          micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
+        end if;
+        
+        
+      elsif SEQ = "1100"  then --jmp if reset = 1
+        if n_flag = '1' then
+          micro_pc <= MICRO_ADR;
+        end if;         
+
+      elsif SEQ = "1101"  then --jmp if collision = 1
+        if n_flag = '1' then
+          micro_pc <= MICRO_ADR;
+        end if;
+
+      elsif SEQ = "1110"  then --jmp if input = 1
+        if n_flag = '1' then
+          micro_pc <= MICRO_ADR;
+        end if;         
       else
         micro_pc <= micro_pc;
       end if;
@@ -218,27 +301,132 @@ begin  -- Behavioral
   end process;
 
 
+
+  -- alu combinatorics
+  alu_add <= std_logic_vector(signed(alu_res(15) & alu_res) + signed(data_bus(15) & data_bus));
+  alu_sub <= std_logic_vector(signed(alu_res(15) & alu_res) - signed(data_bus(15) & data_bus));
+  alu_not <= not data_bus;
+  alu_and <= alu_res and data_bus;
+  alu_or <= alu_res or data_bus;
+  alu_xor <= alu_res xor data_bus;
+
+  
   -- alu_res
   process(clk)
   begin
     if rising_edge(clk) then
       case ALU_OP is
-        when "001" =>             
-          alu_res <= std_logic_vector(signed(alu_res) + signed(data_bus));  --ADD
-        when "010" =>
-          alu_res <= std_logic_vector(signed(alu_res) - signed(data_bus));  --SUB
+        when "001" =>                   -- ADD
+          alu_res <= alu_add(15 downto 0);
+        
+          if alu_add = "00000000000000000" then  -- z_flag
+            z_flag <= '1';
+          else
+            z_flag <= '0';
+          end if;
+          
+          n_flag <= alu_add(15);                -- n_flag
+          c_flag <= alu_add(16);                -- c_flag
+          if alu_res(15) = data_bus(15) then    -- o_flag
+            if alu_res(15) = '0' and data_bus(15) = '0' and alu_add(15) = '1' then
+              o_flag <= '1';
+            elsif alu_res(15) = '1' and data_bus(15) = '1' and alu_add(15) = '0' then
+              o_flag <= '1';
+              else
+              o_flag <= '0';
+            end if;
+          else
+            o_flag <= '0';
+          end if;
+
+          
+        when "010" =>                   -- SUB
+          alu_res <= alu_sub(15 downto 0);
+
+          if alu_sub = "00000000000000000" then  -- z_flag
+            z_flag <= '1';
+          else
+            z_flag <= '0';
+          end if;
+          
+          n_flag <= alu_sub(15);                -- n_flag
+          c_flag <= '0';                        -- c_flag (no meaning when subtracting)
+          
+          if alu_res(15) /= data_bus(15) then   -- o_flag
+            if (alu_res(15) = '0' and data_bus(15) = '1' and alu_sub(15) = '1') then
+              o_flag <= '1';
+            elsif alu_res(15) = '1' and data_bus(15) = '0' and alu_sub(15) = '0' then
+              o_flag <= '1';
+            else
+              o_flag <= '0';
+            end if;
+          else
+            o_flag <= '0';
+          end if;
+
         when "011" =>
-          alu_res <= not data_bus;                                          --NOT
+          alu_res <= alu_not;                                               --NOT
+          if alu_not = "0000000000000000" then  -- z_flag
+            z_flag <= '1';
+          else
+            z_flag <= '0';
+          end if;
+
         when "100" =>
-          alu_res <= alu_res and data_bus;                                  --AND
+          alu_res <= alu_and;                                               --AND
+          if alu_and = "0000000000000000" then  -- z_flag
+            z_flag <= '1';
+          else
+            z_flag <= '0';
+          end if;
+
+          n_flag <= alu_and(15);
+          o_flag <= '0';
+          c_flag <= '0';          
+          
         when "101" =>
-          alu_res <= alu_res or data_bus;                                   --OR
+          alu_res <= alu_or;                                                --OR
+          if alu_or = "0000000000000000" then  -- z_flag
+            z_flag <= '1';
+          else
+            z_flag <= '0';
+          end if;
+
+          n_flag <= alu_or(15);
+          o_flag <= '0';
+          c_flag <= '0';
         when "110" =>
-          alu_res <= alu_res xor data_bus;                                  --XOR
+          alu_res <= alu_xor;                                               --XOR
+          if alu_xor = "0000000000000000" then  -- z_flag
+            z_flag <= '1';
+          else
+            z_flag <= '0';
+          end if;
+
+          n_flag <= alu_xor(15);
+          o_flag <= '0';
+          c_flag <= '0';
         when "111" =>
           alu_res <= alu_res;                                               --||UNUSED||
-        when others => null;
+          n_flag <= '0';
+          o_flag <= '0';
+          c_flag <= '0';
+          z_flag <= '0';
+         
+        when others =>
+          if FROM_BUS = "0100" then
+            alu_res <= data_bus;
+          else
+            alu_res <= alu_res;
+          end if;
+          n_flag <= '0';
+          o_flag <= '0';
+          c_flag <= '0';
+          z_flag <= '0';
       end case;
+
+
+
     end if;
   end process;
   

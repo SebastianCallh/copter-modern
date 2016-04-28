@@ -2,20 +2,6 @@
 ------ CPU PORT INDEX ------
 ----------------------------
 
-No.	 Module		Port No.
-1	 PC		0001
-2   	 ASR		0010
-3   	 PMEM		0011
-4  	 ALU		0100
-5  	 ALU_RES	0101
-6   	 RES		0110
-7   	 IR		0111
-8   	 REG1		1000
-9   	 REG2		1001
-10  	 REG3		1010
-11  	 REG4		1011
-
-
 
 
 ----------------------------
@@ -68,9 +54,9 @@ No.	 Module		Port No.
 0010    micro_pc = MOD
 0011    micro_pc = 0
 	
-0100    micro_pc = micro_address  --  (micro_mem(micro_pc))(7 downto 0)
-0101    
-0110    
+0100    jmp -- micro_pc = micro_address
+0101    jmp if Z = 1
+0110    jmp if N = 1
 0111	
 	
 1000    
@@ -78,9 +64,9 @@ No.	 Module		Port No.
 1010    
 1011    
 	
-1100    
-1101    
-1110    
+1100    reset interrupt
+1101    collision interrupt
+1110    input interrupt
 1111	
 
 
