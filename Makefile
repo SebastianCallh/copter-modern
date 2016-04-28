@@ -34,7 +34,7 @@ PART=xc6slx16-3-csg324
 
 
 
-copter_modern.%: S=copter_modern.vhd kbd_enc.vhd pic_mem.vhd vga_motor.vhd ett_annat_pic_mem.vhd
+copter_modern.%: S=copter_modern.vhd kbd_enc.vhd pic_mem.vhd vga_motor.vhd ett_annat_pic_mem.vhd cpu.vhd
 copter_modern.%: T=copter_modern_tb.vhd
 copter_modern.%: U=Nexys3.ucf
 
