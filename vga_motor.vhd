@@ -21,18 +21,21 @@ entity VGA_MOTOR is
 	 vgaGreen	        : out std_logic_vector(2 downto 0);
 	 vgaBlue		: out std_logic_vector(2 downto 1);
 	 Hsync		        : out std_logic;
-	 Vsync		        : out std_logic);
+	 Vsync		        : out std_logic;
+         player_x               : in integer;
+         player_y               : in integer;
+         collision              : out std_logic);
 end VGA_MOTOR;
 
 -- architecture
 architecture Behavioral of VGA_MOTOR is
 
-  signal	Xpixel	        : unsigned(10 downto 0) := (others => '0');         -- Horizontal pixel counter
-  signal	Ypixel	        : unsigned(9 downto 0) := (others => '0');		-- Vertical pixel counter
-  signal	ClkDiv	        : unsigned(1 downto 0) := (others => '0');		-- Clock divisor, to generate 25 MHz signal
-  signal	Clk25		: std_logic;			-- One pulse width 25 MHz signal
+  signal	Xpixel	        : unsigned(10 downto 0) := (others => '0');     -- Horizontal pixel counter
+  signal	Ypixel	        : unsigned(9 downto 0) := (others => '0');      -- Vertical pixel counter
+  signal	ClkDiv	        : unsigned(1 downto 0) := (others => '0');	-- Clock divisor, to generate 25 MHz signal
+  signal	Clk25		: std_logic;		                	-- One pulse width 25 MHz signal
   signal 	out_pixel       : std_logic_vector(7 downto 0) := "00000011";	-- Final pixel output
-  signal        blank           : std_logic;                    -- blanking signal
+  signal        blank           : std_logic;                                    -- blanking signal
 
 
   --temporary signals to only test pushing data from memory to scre
@@ -40,11 +43,11 @@ architecture Behavioral of VGA_MOTOR is
   signal data_in	: std_logic_vector(0 downto 0) := "0";
   signal tile_x         : std_logic_vector(7 downto 0) := "10101010";
   signal tile_y         : std_logic_vector(6 downto 0) := "1010101";
-  signal player_x       : integer := 100;
-  signal player_y       : integer := 100;
+  --signal player_x       : integer := 100;
+  --signal player_y       : integer := 100;
   -- port 2
   signal out_addr       : std_logic_vector(10 downto 0) := "10101010101";
-  signal collision      : std_logic := '0';
+  --signal collision      : std_logic := '0';
   signal pixel_from_pic_mem : std_logic_vector(7 downto 0);
 
   component ett_annat_pic_mem is
