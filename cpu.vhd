@@ -31,7 +31,7 @@ architecture Behavioral of CPU is
   signal ir : std_logic_vector(31 downto 0);
 
   -- Registers
-  signal reg1 : std_logic_vector(15 downto 0) := "0000001000000000";
+  signal reg1 : std_logic_vector(15 downto 0) := "0000010000000000";
   signal reg2 : std_logic_vector(15 downto 0);
   signal reg3 : std_logic_vector(15 downto 0);
   signal reg4 : std_logic_vector(15 downto 0);
