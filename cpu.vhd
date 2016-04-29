@@ -76,20 +76,20 @@ architecture Behavioral of CPU is
 
   -- micro-MEM (Max is 255 for 8 bit addresses)
   type micro_mem_t is array (0 to 255) of std_logic_vector(23 downto 0);
-  signal micro_mem : micro_mem_t := ("001101000000000000000000",  -- 0
-                                     "010100000001000000000000",  -- 1
-                                     "010000110000000000000000",  -- 2
-                                     "100010010000000000000000",  -- reg1 > reg2
-                                     "100010100000000000000000",  -- reg1 > reg3
-                                     "101001000000000000000000",  -- reg3 > alu_res
-                                     "010100000010000000000000",  -- alu -= res
-                                     "010010100000011100000110",  -- jmp if z=0
-                                     "100101000000000000000000",  -- reg2 > alu_res
-                                     "010100000010000000000000",  -- alu -= res
-                                     "010010010000011100000100",  -- 6
-                                     "000000000000010000000000",  -- 7
+  signal micro_mem : micro_mem_t := (--"001101000000000000000000",  -- 0
+                                     --"010100000001000000000000",  -- 1
+                                     --"010000110000000000000000",  -- 2
+                                     --"100010010000000000000000",  -- reg1 > reg2
+                                     --"100010100000000000000000",  -- reg1 > reg3
+                                     --"101001000000000000000000",  -- reg3 > alu_res
+                                     --"010100000010000000000000",  -- alu -= res
+                                     --"010010100000011100000110",  -- jmp if z=0
+                                     --"100101000000000000000000",  -- reg2 > alu_res
+                                     --"010100000010000000000000",  -- alu -= res
+                                     --"010010010000011100000100",  -- 6
+                                     --"000000000000010000000000",  -- 7
                                      others => "000000000000000000000000");
-
+ 
   -- ROM (mod) (Includes all 4 mods, need to be updated with correct micro-addresses)
   type mod_rom_t is array (3 downto 0) of std_logic_vector(7 downto 0);
   constant mod_rom : mod_rom_t := (x"FF", x"FF", x"00", x"00");
@@ -116,8 +116,8 @@ begin  -- Behavioral
   process(clk)
   begin
     if rising_edge(clk) then
-     player_x <= to_integer(unsigned(pmem(to_integer(unsigned(X_POS))))) mod 1024;
-     player_y <= 200;
+     player_x <= 220; --to_integer(unsigned(pmem(to_integer(unsigned(X_POS))))) mod 1024;
+     player_y <= 240;
     end if;
   end process;
   
