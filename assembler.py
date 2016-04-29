@@ -11,10 +11,15 @@ if not len(sys.argv) is 2:
     sys.exit('No code to assemble supplied')
     
 instr_lookup = {'NOP' : '00',
-                'MV' : '01',
-                'JMP' : '02',
+                'MV'  : '01',
+                'ADD' : '02',
+                'SUB' : '03',
+                'BEQ' : '04',
+                'BNE' : '05',
+                'BN'  : '06',
+                'JMP' : '07',
                 'DIE' : 'FF'}
-has_one_arg = []
+has_one_arg = ['ADD', 'SUB', 'BEQ', 'BNE', 'BN']
 has_two_args = ['MV']
 
 lines = []

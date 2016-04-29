@@ -110,4 +110,10 @@
 
 NOP = 00
 MV  = 01
+ADD = 02
+SUB = 03
+BEQ = 04
+BNE = 05
+BN  = 06
+JMP = 07
 DIE = FF
