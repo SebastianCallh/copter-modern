@@ -4,65 +4,67 @@ use IEEE.STD_LOGIC_1164.ALL;            -- basic IEEE library
 use IEEE.std_logic_unsigned.ALL;
 use IEEE.NUMERIC_STD.ALL;               -- IEEE library for the unsigned type
 
-
 -- entity
-entity PIC_MEM is
+entity pic_mem is
   port ( clk		: in std_logic;
-         -- port 1
          we		: in std_logic;
-         data_in	: in std_logic_vector(7 downto 0);
-         tile_x         : in std_logic_vector(9 downto 0);
-         tile_y         : in std_logic_vector(8 downto 0);
+         data_in	: in std_logic_vector(0 downto 0);
+         tile_x         : in std_logic_vector(7 downto 0);
+         tile_y         : in std_logic_vector(6 downto 0);
          player_x       : in integer;
          player_y       : in integer;
-         -- port 2
          out_pixel	: out std_logic_vector(7 downto 0);
-         out_addr       : in std_logic_vector(10 downto 0);
-         collision      : out std_logic);
+         pixel_x        : in unsigned(10 downto 0);
+         pixel_y        : in unsigned(9 downto 0);
+         collision      : out std_logic;
+         offset         : in integer);
 
-end PIC_MEM;
+end pic_mem;
 
 	
 -- architecture
-architecture Behavioral of PIC_MEM is
-
-  signal tile_type : std_logic;
-  signal tile_int : integer;
-  
-  signal x_internal : std_logic_vector(9 downto 0);
-  signal y_internal : std_logic_vector(8 downto 0);
-
-  signal x_mod_tile_s : integer range 0 to 7;
-  signal y_mod_tile_s : integer range 0 to 7;
-
-  signal x_mod_sprite_s : integer range 0 to 15;
-  signal y_mod_sprite_s : integer range 0 to 15;
+architecture Behavioral of pic_mem is
+  signal sprite_x_mod : integer range 0 to 15;
+  signal sprite_y_mod : integer range 0 to 15;
 
   signal tile_pixel : std_logic_vector(7 downto 0);
   signal sprite_pixel : std_logic_vector(7 downto 0);
-  signal background_pixel : std_logic_vector(7 downto 0);
+  signal background_pixel : std_logic_vector(7 downto 0) := "00000011";
+
+  constant GRID_HEIGHT : integer := 60;
+  constant GRID_WIDTH : integer := 80;
+  constant SCREEN_HEIGHT : integer := 480;
+  constant SCREEN_WIDTH : integer := 640;
   
-  -- tile_grid type (61 * 34 = 2074)
-  type tile_grid is array (0 to 2074) of std_logic;
-  signal tiles : tile_grid := ('0','1','0','0','1','0','1','0','0','1','0','1','0','0','1','0',
-                                       '1','0','0','1','0','1','0','0','1','0','1','0','0','1','0','1',
-                                       '0','0','1','0','1','0','0','1','0','1','0','0','1','0','1','0',
-                                       '0','1','0','1','0','0','1','0','1','0','0','1','0','1','0','0',others =>'0');
+  constant TILE_SIZE : integer := 8;
+  constant SPRITE_SIZE : integer := 16;
+  
+  -- 8x8 Tile grid (640 / 8) * (480 / 8) = 80 * 60 = 4800 => 4096
+  type grid_ram is array (0 to 4095) of std_logic_vector(0 downto 0);
+  signal grid_mem : grid_ram := ("1", "1", "1", others => "0");
 
-    --sprite_memory type
+  -- 16x16 Sprite memory 16*16 = 256
   type sprite_ram is array (0 to 255) of std_logic_vector(7 downto 0);
-  signal sprite_mem : sprite_ram := (others => "00000011");
+  signal sprite_mem : sprite_ram := (others => "11000011");
 
+  signal tile_addr : std_logic_vector(0 downto 0);
+  signal grid_coord_x : unsigned(7 downto 0); -- x tile coordinate
+  signal grid_coord_y : unsigned(6 downto 0); -- y tile coordinate
+  signal tile_sub_x : unsigned(2 downto 0); -- x pixel in the tile
+  signal tile_sub_y : unsigned(2 downto 0); -- y pixel in the tile
+  signal tmp_tile_addr : integer;
+  signal offset_x                : unsigned (10 downto 0);
+    
   -- Tile_memory type
   type tile_ram is array (0 to 127) of std_logic_vector(7 downto 0);
   signal tile_mem : tile_ram := 
 		( x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",      -- space
-		  x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",
-		  x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",
-		  x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",
-		  x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",
-		  x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",
-		  x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",
+		  x"FF",x"FF",x"FF",x"00",x"FF",x"FF",x"FF",x"FF",
+		  x"FF",x"FF",x"FF",x"00",x"FF",x"FF",x"FF",x"FF",
+		  x"FF",x"00",x"00",x"00",x"00",x"00",x"FF",x"FF",
+		  x"FF",x"00",x"00",x"00",x"00",x"00",x"FF",x"FF",
+		  x"FF",x"FF",x"FF",x"00",x"FF",x"FF",x"FF",x"FF",
+		  x"FF",x"FF",x"FF",x"00",x"FF",x"FF",x"FF",x"FF",
 		  x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",
 
 		  x"FF",x"FF",x"00",x"00",x"00",x"FF",x"FF",x"FF",	-- A
@@ -75,71 +77,55 @@ architecture Behavioral of PIC_MEM is
 		  x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF");
 
 begin
-  --set tile int
-  tile_int <= 1 when tile_type = '1' else 0;
 
-  --tile_grid memory
+  offset_x <= pixel_x + offset;
+  grid_coord_x <= offset_x(10 downto 3);
+  grid_coord_y <= pixel_y(9 downto 3);
+  tile_sub_x <= offset_x(2 downto 0);
+  tile_sub_y <= pixel_y(2 downto 0);
+  tmp_tile_addr <= (conv_integer(tile_addr) * TILE_SIZE * TILE_SIZE) + (to_integer(tile_sub_y) * TILE_SIZE) + to_integer(tile_sub_x);
+
+  
+  --grid memory
   process(clk)
     begin
       if rising_edge(clk) then
         if (we = '1') then
-          --code for port 1 (CPU)
+          --GER FATAL ERROR VID SIMULERING
+          grid_mem(conv_integer(tile_y) * SCREEN_WIDTH +
+                    conv_integer(tile_x)) <= data_in;
         end if;
-        tile_type <= tiles(conv_integer(out_addr));
---fel "måste heltalsdivideras med tile-storlek"
-
-
-
-
---SÅ ATT VI INTE GLÖMMER BORT
---I och med att våra tiles kommer vara multiplar av 2 breda och höga
---kan vi bara maska ut de t.ex. 3 MSB för att göra modulu 8.
---I och med att skärmen nu är 640 * 480 kan vi ha
---640 / 8 = 80, 480 / 8 = 60 tiles om de är 8x8.
-        
       end if;
+      tile_addr <= grid_mem(to_integer((grid_coord_y * TILE_SIZE) + grid_coord_x));
     end process;
-    
-  --modulus tile_size
-  x_mod_tile_s <= conv_integer(x_internal) mod 8;
-  y_mod_tile_s <= conv_integer(y_internal) mod 8;
-
-  --flip-flopp
---  process(clk)
---  begin  
---    if rising_edge(clk) then
---      x_internal <= x2;
---      y_internal <= y2;
---    end if;
---  end process;
-
-  --Tile memory
+ 
+  --tile memory
   process(clk)
   begin
     if rising_edge(clk) then
-      tile_pixel <= tile_mem((y_mod_tile_s*8) + x_mod_tile_s + tile_int*64);
+      tile_pixel <= tile_mem(tmp_tile_addr);
     end if;
   end process;
 
   --modulus sprite_size
-  x_mod_sprite_s <= player_x mod 16;
-  y_mod_sprite_s <= player_y mod 16;
-  
+  sprite_x_mod <= player_x mod 16;  -- mod 16
+  sprite_y_mod <= player_y mod 16;  -- mod 16
   
   --sprite memory
   process(clk)
   begin
     if rising_edge(clk) then
-      if (x_internal >= player_x) and (y_internal >= player_y) then
-        if (x_internal < (player_x+16)) and (y_internal < (player_y+16)) then
-          sprite_pixel <= sprite_mem((y_mod_sprite_s*16) + x_mod_sprite_s);
+      if (pixel_x >= player_x) and (pixel_y >= player_y) then
+        if (pixel_x < (player_x + SPRITE_SIZE)) and (pixel_y < (player_y + SPRITE_SIZE)) then
+          sprite_pixel <= sprite_mem((sprite_y_mod * SPRITE_SIZE) + sprite_x_mod);
         else
           sprite_pixel <= x"00";
         end if;
+      else
+          sprite_pixel <= x"00";
       end if;
     end if;
   end process;
-
 
   --pixel chooser
   process (clk)
