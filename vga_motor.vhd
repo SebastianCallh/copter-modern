@@ -185,7 +185,7 @@ begin
   begin
     if rising_edge(clk) then
       if offset_clk = '1' then
-        if offset = 640 then
+        if offset = 1024 then
           offset <= 0;
         else
           offset <= offset + 1;
