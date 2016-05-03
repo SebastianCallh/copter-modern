@@ -67,7 +67,15 @@ architecture Behavioral of CPU is
   alias ALU_OP : std_logic_vector(2 downto 0) is micro_instr(14 downto 12);     -- alu_op
   alias SEQ : std_logic_vector(3 downto 0) is micro_instr(11 downto 8);         -- seq
   alias MICRO_ADR : std_logic_vector(7 downto 0) is micro_instr(7 downto 0);    -- micro address
-  
+
+  alias FETCH_NEXT : std_logic is ir(23);
+  alias OP_CODE : std_logic_vector(7 downto 0) is ir(31 downto 24);
+    
+  -- Interrupt vectors
+  constant RESET_INTERRUPT_VECTOR : std_logic_vector(7 downto 0) := x"DC";  --220
+  constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(7 downto 0) := x"E6"; --230
+  constant INPUT_INTERRUPT_VECTOR : std_logic_vector(7 downto 0) := x"F0";  --240
+
   -- PMEM (Max is 65535 for 16 bit addresses)
   type ram_t is array (0 to 4096) of std_logic_vector(15 downto 0);
   signal pmem : ram_t := ("0000000001000000",
@@ -76,54 +84,40 @@ architecture Behavioral of CPU is
 
   -- micro-MEM (Max is 255 for 8 bit addresses)
   type micro_mem_t is array (0 to 255) of std_logic_vector(23 downto 0);
-  signal micro_mem : micro_mem_t := (--"001101000000000000000000",  -- 0
-                                     --"010100000001000000000000",  -- 1
-                                     --"010000110000000000000000",  -- 2
-                                     --"100010010000000000000000",  -- reg1 > reg2
-                                     --"100010100000000000000000",  -- reg1 > reg3
-                                     --"101001000000000000000000",  -- reg3 > alu_res
-                                     --"010100000010000000000000",  -- alu -= res
-                                     --"010010100000011100000110",  -- jmp if z=0
-                                     --"100101000000000000000000",  -- reg2 > alu_res
-                                     --"010100000010000000000000",  -- alu -= res
-                                     --"010010010000011100000100",  -- 6
-                                     --"000000000000010000000000",  -- 7
-                                     others => "000000000000000000000000");
- 
+  signal micro_mem : micro_mem_t := (
+    "000100100000111100000000",  -- check for interrupts, ASR <= PC
+    "001101100000100000000000",  -- fetch instruction (only 16 bits)
+                                 -- and check for 32 bit instruction
+    "000000001000100000000101",  -- if 16 bit fetch next 8
+    "000100101000000000000000",
+    "001101110000000000000000",
+    "000000000000001000000000",  -- check adress mod
+    "011100100000000100000000",  -- 05:absolute  asr <= pmem(asr)
+    "011000100000000000000000",  -- 06:indirect  asr <= pmem(asr)
+    "001100100000000100000000",  --             asr <= pmem(asr)
+    "001111000000001100000000",  -- 08:mv        pmem(res) <= pmem(asr)
+    "001100000001000000000000",  -- 09:add       alu_res += pmem(asr)
+    "010011000000001100000000",  --             pmem(res) <= alu_res
+    "001100000010000000000000",  -- 0B:sub      alu_res -= pmem(asr)
+    "010011000000001100000000",  --             pmem(res) <= alu_res
+    "000000000000011100000000",  -- 0D:beq      if z = 0: u_pc <= 0 
+    "001000010000001100000000",  --             PC <= asr
+    "000000000000010100000000",  -- 0F:bne      if z = 1: u_pc <= 0
+    "001000010000001100000000",  --             PC <= asr
+    "000000000000011000000000",  -- 11:bn       if n = 0: u_pc <= 0 
+    "001000010000001100000000",  --             PC <= asr
+    others => "000000000000000000000000");
+
+  
   -- ROM (mod) (Includes all 4 mods, need to be updated with correct micro-addresses)
   type mod_rom_t is array (3 downto 0) of std_logic_vector(7 downto 0);
-  constant mod_rom : mod_rom_t := (x"FF", x"FF", x"00", x"00");
-    
-  -- ROM (op-code)(Number of unique instructions, size of micro-memory adress)
-  -- Will need to be updated with correct amount of instructions and micro-addresses)
-  type op_rom_t is array (5 downto 0) of std_logic_vector(7 downto 0);
-  constant op_rom : op_rom_t := (x"FF",
-                                 x"FF",
-                                 x"FF",
-                                 x"00",
-                                 x"00",
-                                 x"00");
+  constant mod_rom : mod_rom_t := (x"06", x"07", x"00", x"00");
 
-
-
-
-  
 begin  -- Behavioral
 
-
-
-  
-  process(clk)
-  begin
-    if rising_edge(clk) then
-     player_x <= 220; --to_integer(unsigned(pmem(to_integer(unsigned(X_POS))))) mod 1024;
-     player_y <= 240;
-    end if;
-  end process;
-  
   -- fetching micro_instr
   micro_instr <= micro_mem(to_integer(unsigned(micro_pc)));
-  
+
   -- pc
   process(clk)
   begin
@@ -154,6 +148,9 @@ begin  -- Behavioral
     if rising_edge(clk) then
       if FROM_BUS = "0011" then
        pmem(to_integer(unsigned(asr))) <= data_bus;
+      end if;
+      if FROM_BUS = "1100" then
+       pmem(to_integer(unsigned(res))) <= data_bus;
       end if;
     end if;
   end process;
@@ -247,10 +244,10 @@ begin  -- Behavioral
         micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
         
       elsif SEQ = "0001"  then -- micro_pc = op
-        micro_pc <= op_rom(to_integer(unsigned(ir(31 downto 26))));
+        micro_pc <= ir(31 downto 26);
         
       elsif SEQ = "0010"  then --micro_pc = mod
-         micro_pc <= mod_rom(to_integer(unsigned(ir(31 downto 26))));
+         micro_pc <= mod_rom(to_integer(unsigned(ir(25 downto 24))));
          
       elsif SEQ = "0011"  then --micro_pc = 0
         micro_pc <= "00000000";
@@ -265,8 +262,8 @@ begin  -- Behavioral
           micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
         end if;
 
-      elsif SEQ = "0110"  then --jmp if N = 1
-        if n_flag = '1' then
+      elsif SEQ = "0110"  then --jmp if N = 0
+        if n_flag = '0' then
           micro_pc <= MICRO_ADR;
         else
           micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
@@ -278,27 +275,28 @@ begin  -- Behavioral
         else
           micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
         end if;
-        
-        
-      elsif SEQ = "1100"  then --jmp if reset = 1
-        if n_flag = '1' then
-          micro_pc <= MICRO_ADR;
-        end if;         
 
-      elsif SEQ = "1101"  then --jmp if collision = 1
-        if n_flag = '1' then
+      elsif SEQ = "1000" then  --check for 16 bit inst
+        if FETCH_NEXT = '0' then
           micro_pc <= MICRO_ADR;
         end if;
 
-      elsif SEQ = "1110"  then --jmp if input = 1
-        if n_flag = '1' then
-          micro_pc <= MICRO_ADR;
-        end if;         
+      --interrupts 
+      elsif SEQ = "1111" then
+        if reset = '1' then
+          micro_pc <= RESET_INTERRUPT_VECTOR;
+        end if;
+        if collision = '1' then 
+          micro_pc <= COLLISION_INTERRUPT_VECTOR;
+        end if;
+        if input = '1' then 
+          micro_pc <= INPUT_INTERRUPT_VECTOR;
+        end if;
       else
         micro_pc <= micro_pc;
       end if;
     end if;
-  end process;
+end process;
 
 
 
