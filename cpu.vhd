@@ -95,8 +95,8 @@ architecture Behavioral of CPU is
     "011100100000000100000000",  -- 05:absolute  asr <= pmem(asr)
     "011000100000000000000000",  -- 06:indirect  asr <= pmem(asr)
     "001100100000000100000000",  --             asr <= pmem(asr)
-    "001111000000001100000000",  -- 08:mv        pmem(res) <= pmem(asr)
-    "001100000001000000000000",  -- 09:add       alu_res += pmem(asr)
+    "001111000000001100000000",  -- 08:mv       pmem(res) <= pmem(asr)
+    "001100000001000000000000",  -- 09:add      alu_res += pmem(asr)
     "010011000000001100000000",  --             pmem(res) <= alu_res
     "001100000010000000000000",  -- 0B:sub      alu_res -= pmem(asr)
     "010011000000001100000000",  --             pmem(res) <= alu_res
@@ -106,6 +106,17 @@ architecture Behavioral of CPU is
     "001000010000001100000000",  --             PC <= asr
     "000000000000011000000000",  -- 11:bn       if n = 0: u_pc <= 0 
     "001000010000001100000000",  --             PC <= asr
+    "001100000011000000000000",  -- 13:not      alu_res = not pmem(asr)
+    "010011000000001100000000",  --             pmem(res) <= alu_res
+    "001100000100000000000000",  -- 15:and      alu_res = alu_res and pmem(asr)
+    "010011000000001100000000",  --             pmem(res) <= alu_res
+    "001100000101000000000000",  -- 17:or       alu_res = alu_res or pmem(asr)
+    "010011000000001100000000",  --             pmem(res) <= alu_res
+    "001100000110000000000000",  -- 19:xor      alu_res = alu_res xor pmem(asr)
+    "010011000000001100000000",  --             pmem(res) <= alu_res
+    "001000010000001100000000",  -- 1B:jmp      PC <= asr
+    "001001010000001100000000",  -- 1C:lr       res <= asr  (load res)
+ --   "", --
     others => "000000000000000000000000");
 
   
@@ -244,7 +255,7 @@ begin  -- Behavioral
         micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
         
       elsif SEQ = "0001"  then -- micro_pc = op
-        micro_pc <= ir(31 downto 26);
+        micro_pc <= ir(31 downto 24);
         
       elsif SEQ = "0010"  then --micro_pc = mod
          micro_pc <= mod_rom(to_integer(unsigned(ir(25 downto 24))));
@@ -417,10 +428,10 @@ end process;
           else
             alu_res <= alu_res;
           end if;
-          n_flag <= '0';
-          o_flag <= '0';
-          c_flag <= '0';
-          z_flag <= '0';
+          n_flag <= n_flag;
+          o_flag <= o_flag;
+          c_flag <= c_flag;
+          z_flag <= z_flag;
       end case;
 
 
