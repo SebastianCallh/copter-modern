@@ -54,7 +54,8 @@ architecture Behavioral of pic_mem is
   signal tile_sub_y : unsigned(2 downto 0); -- y pixel in the tile
   signal tmp_tile_addr : integer;
   signal offset_x                : unsigned (10 downto 0);
-    
+
+ 
   -- Tile_memory type
   type tile_ram is array (0 to 127) of std_logic_vector(7 downto 0);
   signal tile_mem : tile_ram := 
@@ -134,7 +135,7 @@ begin
       if sprite_pixel /= x"00" then
         out_pixel <= sprite_pixel;
         if tile_pixel /= x"00" then
-          collision <= '1';  
+          collision <= '1';
         else
           collision <= '0';
         end if;

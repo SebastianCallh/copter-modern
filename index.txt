@@ -116,16 +116,16 @@
 -------- OP-CODES ---------
 ----------------------------
 
-MV  = x"08"
-ADD = x"09"
-SUB = x"0B"
-BEQ = x"0D"
-BNE = x"0F"
-BN  = x"11"
-NOT = x"13"
-AND = x"15"
-OR  = x"17"
-XOR = x"19"
-JMP = x"1B"
-LR  = x"1C"  (LOAD RES)
+MV  = x"09"
+ADD = x"0A"
+SUB = x"0C"
+BEQ = x"0E"
+BNE = x"10"
+BN  = x"12"
+NOT = x"14"
+AND = x"16"
+OR  = x"18"
+XOR = x"1A"
+JMP = x"1C"
+LR  = x"1D"  (LOAD RES)
 DIE = ""
