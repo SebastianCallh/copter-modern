@@ -45,7 +45,8 @@ architecture Behavioral of copter_modern is
            Vsync		: out std_logic;                        -- vertical sync
            player_x             : in integer;
            player_y             : in integer;
-           collision            : out std_logic);
+           collision            : out std_logic;
+           new_column           : out std_logic);
   end component;
 
 
@@ -56,7 +57,8 @@ architecture Behavioral of copter_modern is
            reset               : in std_logic;
            player_x            : out integer;
            player_y            : out integer;
-           input               : in std_logic);                          -- keypress input
+           input               : in std_logic;                          -- keypress input
+           new_column          : in std_logic);
   end component;
 	
   -- intermediate signals between PICT_MEM and VGA_MOTOR
@@ -75,6 +77,8 @@ architecture Behavioral of copter_modern is
   
   signal	collision       : std_logic;                            -- collision interrupt flag
   signal        input_local     : std_logic;                            -- input (from KBD_ENC to CPU)
+
+  signal        new_column      : std_logic;                            -- flag for computing next column
   
 begin
 
@@ -96,7 +100,8 @@ begin
                           player_y=>player_y,
                           collision=>collision,
                           Hsync=>Hsync,
-                          Vsync=>Vsync);
+                          Vsync=>Vsync,
+                          new_column=>new_column);
 
   -- CPU connector
   CP : CPU port map(clk=>clk,
@@ -104,7 +109,8 @@ begin
                     reset=>rst,
                     player_x=>player_x,
                     player_y=>player_y,
-                    input=>input_local);
+                    input=>input_local,
+                    new_column=>new_column);
   
 end Behavioral;
 
