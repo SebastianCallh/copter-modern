@@ -30,12 +30,15 @@ architecture Behavioral of CPU is
   signal alu_res : std_logic_vector(15 downto 0);
   signal res : std_logic_vector(15 downto 0);
   signal ir : std_logic_vector(31 downto 0);
+  signal pmem_asr : std_logic_vector(15 downto 0);
+  signal pmem_res : std_logic_vector(15 downto 0);
 
   -- Registers
   signal reg1 : std_logic_vector(15 downto 0);
   signal reg2 : std_logic_vector(15 downto 0);
   signal reg3 : std_logic_vector(15 downto 0);
   signal reg4 : std_logic_vector(15 downto 0);
+
 
   -- Micro
   signal micro_instr : std_logic_vector(23 downto 0);
@@ -54,7 +57,7 @@ architecture Behavioral of CPU is
   signal ran_nr : std_logic_vector(31 downto 0) := (others => '0');
   signal ran_bit : std_logic;
   -- init value for new_ran is seed
-  signal new_ran : std_logic_vector(31 downto 0) := "11110100101101111100001101000010";
+  signal new_ran : std_logic_vector(31 downto 0) := "11110000111100001111000011110000";
                                                                       
   
   -- Flags
@@ -65,8 +68,8 @@ architecture Behavioral of CPU is
 
 
   -- Constants (Variables)
-  signal X_POS : std_logic_vector(15 downto 0) := "0000000000000000";
-  signal Y_POS : std_logic_vector(15 downto 0) := "0000000000000001";
+  signal x_pos : std_logic_vector(15 downto 0) := "0000000000000000";
+  signal y_pos : std_logic_vector(15 downto 0) := "0000000000000001";
   
   -- Alias
   alias TO_BUS : std_logic_vector(3 downto 0) is micro_instr(23 downto 20);     -- to bus
@@ -80,10 +83,10 @@ architecture Behavioral of CPU is
   alias OP_CODE : std_logic_vector(7 downto 0) is ir(31 downto 24);
     
   -- Interrupt vectors
-  constant RESET_INTERRUPT_VECTOR : std_logic_vector(7 downto 0) := x"DC";  --220
-  constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(7 downto 0) := x"E6"; --230
-  constant INPUT_INTERRUPT_VECTOR : std_logic_vector(7 downto 0) := x"F0";  --240
-  constant NEW_COLUMN_INTERUPT_VECTOR : std_logic_vector(7 downto 0) := x"FA";  --250
+  constant RESET_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00DC";  --220
+  constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00E6"; --230
+  constant INPUT_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00F0";  --240
+  constant NEW_COLUMN_INTERUPT_VECTOR : std_logic_vector(15 downto 0) := x"00FA";  --250
 
   -- PMEM (Max is 65535 for 16 bit addresses)
   type ram_t is array (0 to 4096) of std_logic_vector(15 downto 0);
@@ -110,8 +113,8 @@ architecture Behavioral of CPU is
     "001101100000000000000000",  -- fetch instruction (only 16 bits)
                                  -- and check for 32 bit instruction
     "000000001000100000000101",  -- if 16 bit fetch next 8
-    "000100101000000000000000",
-    "001101110000000000000000",
+    "000100101000000000000000",  -- asr <= pc, pc++
+    "001101110000000000000000",  -- ir(15 downto 0) <= pmem(asr)
     "000000000000001000000000",  -- 05:check adress mod
     "001100100000000100000000",  -- 06:absolute asr <= pmem(asr)
     "001100100000000000000000",  -- 07:direct   asr <= pmem(asr)
@@ -137,6 +140,7 @@ architecture Behavioral of CPU is
     "010011000000001100000000",  --             pmem(res) <= alu_res
     "001000010000001100000000",  -- 1C:jmp      PC <= asr
     "001001010000001100000000",  -- 1D:lr       res <= asr  (load res)
+    "001001000000001100000000",  -- 1E:lar      alu_res <= asr (load alu_res)
  --   "", --
     others => "000000000000000000000000");
 
@@ -150,16 +154,27 @@ begin  -- Behavioral
   -- fetching micro_instr
   micro_instr <= micro_mem(to_integer(unsigned(micro_pc)));
 
+
+  
   -- pc
   process(clk)
   begin
     if rising_edge(clk) then
       if FROM_BUS = "0001" then
         pc <= data_bus;
-      end if;
-
-      if P_BIT = '1' then
+      elsif P_BIT = '1' then
         pc <= std_logic_vector(unsigned(pc) + 1);
+        
+      --interrupts 
+      elsif SEQ = "1111" then
+        if reset = '1' then
+          pc <= RESET_INTERRUPT_VECTOR;
+        elsif collision = '1' then 
+          pc <= COLLISION_INTERRUPT_VECTOR;
+        elsif input = '1' then 
+          pc <= INPUT_INTERRUPT_VECTOR;
+        end if;
+        
       end if;
     end if;
   end process;
@@ -179,10 +194,17 @@ begin  -- Behavioral
   begin
     if rising_edge(clk) then
       if FROM_BUS = "0011" then
-       pmem(to_integer(unsigned(asr))) <= data_bus;
-      end if;
-      if FROM_BUS = "1100" then
-       pmem(to_integer(unsigned(res))) <= data_bus;
+        pmem(to_integer(unsigned(asr))) <= data_bus;
+      elsif FROM_BUS = "1100" then
+        pmem(to_integer(unsigned(res))) <= data_bus;
+      elsif TO_BUS = "0011" then
+        pmem_asr <= pmem(to_integer(unsigned(asr)));
+      elsif TO_BUS = "1100" then
+        pmem_res <= pmem(to_integer(unsigned(res)));
+      elsif SEQ = "1001" then
+        player_x <= to_integer(unsigned(pmem(to_integer(unsigned(x_pos)))));
+      elsif SEQ = "1010" then
+        player_y <= to_integer(unsigned(pmem(to_integer(unsigned(y_pos)))));
       end if;
     end if;
   end process;
@@ -255,7 +277,7 @@ begin  -- Behavioral
   with TO_BUS select
     data_bus <= pc when "0001",    
                 asr when "0010",
-                pmem(to_integer(unsigned(asr))) when "0011",
+                pmem_asr when "0011",
                 alu_res when "0100",
                 res when "0101",
                 ir(31 downto 16) when "0110",
@@ -264,12 +286,12 @@ begin  -- Behavioral
                 reg2 when "1001",
                 reg3 when "1010",
                 reg4 when "1011",
+                pmem_res when "1100",
                 ran_nr(31 downto 16) when "1101",
     
                 data_bus when others;
 
 
-  
   -- micro_pc
   process(clk)
   begin
@@ -316,7 +338,7 @@ begin  -- Behavioral
         else
           micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
         end if;
-
+        
       --interrupts 
       elsif SEQ = "1111" then
         if reset = '1' then
