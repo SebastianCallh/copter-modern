@@ -45,8 +45,24 @@ architecture Behavioral of pic_mem is
 
   -- 16x16 Sprite memory 16*16 = 256
   type sprite_ram is array (0 to 255) of std_logic_vector(7 downto 0);
-  signal sprite_mem : sprite_ram := (others => "11000011");
+  signal sprite_mem : sprite_ram := (x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",
+                                     x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",
+                                     x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",
+                                     x"00",x"00",x"00",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",
+                                     x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"FF",x"00",x"00",x"00",x"00",x"00",x"00",
+                                     x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"FF",x"FF",x"FF",x"00",x"00",x"00",x"00",x"00",
+                                     x"FF",x"00",x"00",x"00",x"00",x"00",x"FF",x"FF",x"1F",x"1F",x"1F",x"FF",x"FF",x"00",x"00",x"00",
+                                     x"E0",x"FF",x"00",x"00",x"00",x"00",x"FF",x"FF",x"1F",x"1F",x"1F",x"1F",x"FF",x"00",x"00",x"00",
+                                     x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"1F",x"1F",x"FF",x"00",x"00",
+                                     x"00",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"03",x"03",x"03",x"FF",x"FF",x"FF",x"FF",x"00",x"00",
+                                     x"00",x"00",x"00",x"00",x"00",x"00",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"00",x"00",x"00",
+                                     x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"FF",x"00",x"00",x"00",x"FF",x"00",x"00",x"FF",x"00",
+                                     x"00",x"00",x"00",x"00",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"00",x"00",
+                                     x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",
+                                     x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",
+                                     x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00");
 
+  
   signal tile_addr : std_logic_vector(0 downto 0);
   signal grid_coord_x : unsigned(7 downto 0); -- x tile coordinate
   signal grid_coord_y : unsigned(6 downto 0); -- y tile coordinate
