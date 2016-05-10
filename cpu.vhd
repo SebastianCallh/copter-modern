@@ -262,7 +262,7 @@ begin  -- Behavioral
                 reg2 when "1001",
                 reg3 when "1010",
                 reg4 when "1011",
-                ran_nr(31 downto 16) when "1100",
+                ran_nr(31 downto 16) when "1101",
     
                 data_bus when others;
 
