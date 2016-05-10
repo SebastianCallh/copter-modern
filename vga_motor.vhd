@@ -24,7 +24,9 @@ entity VGA_MOTOR is
 	 Vsync		        : out std_logic;
          player_x               : in integer;
          player_y               : in integer;
-         collision              : out std_logic);
+         collision              : out std_logic;
+         new_column             : out std_logic);
+  
 end VGA_MOTOR;
 
 -- architecture
@@ -35,8 +37,8 @@ architecture Behavioral of VGA_MOTOR is
   signal	ClkDiv	        : unsigned(1 downto 0) := (others => '0');	-- Clock divisor, to generate 25 MHz signal
   signal	Clk25		: std_logic;		                	-- One pulse width 25 MHz signal
   signal 	out_pixel       : std_logic_vector(7 downto 0) := "00000011";	-- Final pixel output
-  signal        blank           : std_logic;                                    -- blanking signal
-
+  signal        blank           : std_logic;                                    -- blanking signal        
+  constant      TILE_SIZE       : integer := 8;
 
   --temporary signals to only test pushing data from memory to scre
   -- port 1
@@ -50,6 +52,7 @@ architecture Behavioral of VGA_MOTOR is
   signal offset_count            : std_logic_vector(20 downto 0) := (others => '0');
   signal offset_clk              : std_logic;
   constant OFFSET_UPDATE_LATENCY : integer := 1400000;
+
   
   component pic_mem is
     port ( clk		: in std_logic;
@@ -110,7 +113,17 @@ begin
       end if;
     end if;
   end process;
-	
+
+  process (clk)
+  begin
+    if rising_edge(clk) then
+      if (offset mod TILE_SIZE) = 0 then
+        new_column <= '1';
+      end if;
+    end if;
+  end process;
+
+  
   -- 25 MHz clock (one system clock pulse width)
   offset_clk <= '1' when (offset_count = OFFSET_UPDATE_LATENCY) else '0';
 
@@ -135,6 +148,7 @@ begin
           Xpixel <= Xpixel + 1;
         end if;
       end if;
+      
     end if; 
   end process;
 --800
