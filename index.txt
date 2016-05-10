@@ -20,7 +20,7 @@
 0011    PMEM(ASR)
 	
 0100    ALU_RES
-0101    RES
+0101    RES (write only)
 0110    IR(31 DOWNTO 16)
 0111	IR(15 DOWNTO 0)
 	
@@ -29,7 +29,7 @@
 1010    REG3
 1011    REG4
 	
-1100    
+1100    PMEM(RES)
 1101    
 1110    
 1111
@@ -56,18 +56,18 @@
 	
 0100    jmp -- micro_pc = micro_address
 0101    jmp if Z = 1
-0110    jmp if N = 1
-0111	
+0110    jmp if N = 0
+0111	jmp if Z = 0
 	
-1000    
+1000    jpm if not 32 bit instr
 1001    
 1010    
 1011    
 	
-1100    reset interrupt
-1101    collision interrupt
-1110    input interrupt
-1111	
+1100    
+1101    
+1110    
+1111	check interrupts
 
 
 
@@ -81,9 +81,9 @@
 ----- INSTRUCTIONS(IR) -----
 ----------------------------
 
-|   OP   | MOD |FETCH NEXT ROW 
-| XXXXXX | XX  | X | ------- | 
-| 31->26 |25>24| 23| 22-> 16
+|    OP    |  MOD  | FETCH NEXT ROW 
+| XXXXXXXX |  XX   | X  | ------- | 
+| 31->24   | 23>22 | 21 | 20 -> 16|
 
        ADDRESS
 | XXXX XXXX XXXX XXXX |
@@ -103,11 +103,29 @@
      3
 
 
+----------------------------
+----------  MOD  -----------
+----------------------------
+
+00 = ABSOLUTE
+01 = INDDIRECT
+10 = UNUSED
+11 = UNUSED
 
 ----------------------------
 -------- OP-CODES ---------
 ----------------------------
 
-NOP = 00
-MV  = 01
-DIE = FF
+MV  = x"09"
+ADD = x"0A"
+SUB = x"0C"
+BEQ = x"0E"
+BNE = x"10"
+BN  = x"12"
+NOT = x"14"
+AND = x"16"
+OR  = x"18"
+XOR = x"1A"
+JMP = x"1C"
+LR  = x"1D"  (LOAD RES)
+DIE = ""

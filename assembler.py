@@ -2,6 +2,14 @@ import sys
 
 #Splits labels from instructions on tabs, so the code must be indented using tabs
 #Splits instruction from args using spaces, so they must be separated using spaces
+#Only deals in hexadecimal numbers
+
+#TODO
+#mods
+#fetch bit
+#inst is actually op-code
+#comments
+
 #Valid code could be:
 #START 	NOP
 #	MV 12 10
@@ -10,11 +18,16 @@ import sys
 if not len(sys.argv) is 2:
     sys.exit('No code to assemble supplied')
     
-instr_lookup = {'NOP' : '00',
-                'MV' : '01',
-                'JMP' : '02',
+op_code_lookup = {'NOP' : '00',
+                'MV'  : '01',
+                'ADD' : '02',
+                'SUB' : '03',
+                'BEQ' : '04',
+                'BNE' : '05',
+                'BN'  : '06',
+                'JMP' : '07',
                 'DIE' : 'FF'}
-has_one_arg = []
+has_one_arg = ['ADD', 'SUB', 'BEQ', 'BNE', 'BN']
 has_two_args = ['MV']
 
 lines = []
@@ -37,11 +50,11 @@ for line in lines:
         label_lookup[label] = line_nr
 
     if (instr):
-        if instr not in instr_lookup:
+        if instr not in op_code_lookup:
             sys.exit("Unknown instruction \'{0}\' at line {1}".format(instr, line_nr))
 
     #Construct the final machine code instruction
-    machine_instr += instr_lookup[instr]
+    machine_instr += op_code_lookup[instr]
     if instr in has_one_arg:
         machine_instr += args[0]
     elif instr in has_two_args:

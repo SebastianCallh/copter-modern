@@ -43,14 +43,15 @@ architecture Behavioral of VGA_MOTOR is
   signal data_in	: std_logic_vector(0 downto 0) := "0";
   signal tile_x         : std_logic_vector(7 downto 0) := "10101010";
   signal tile_y         : std_logic_vector(6 downto 0) := "1010101";
-  --signal player_x       : integer := 100;
-  --signal player_y       : integer := 100;
   -- port 2
-  signal out_addr       : std_logic_vector(10 downto 0) := "10101010101";
-  --signal collision      : std_logic := '0';
   signal pixel_from_pic_mem : std_logic_vector(7 downto 0);
 
-  component ett_annat_pic_mem is
+  signal offset                  : integer := 0;
+  signal offset_count            : std_logic_vector(20 downto 0) := (others => '0');
+  signal offset_clk              : std_logic;
+  constant OFFSET_UPDATE_LATENCY : integer := 1400000;
+  
+  component pic_mem is
     port ( clk		: in std_logic;
            we		: in std_logic;
            data_in	: in std_logic_vector(0 downto 0);
@@ -61,23 +62,26 @@ architecture Behavioral of VGA_MOTOR is
            out_pixel	  : out std_logic_vector(7 downto 0);
            pixel_x        : in unsigned(10 downto 0);
            pixel_y        : in unsigned(9 downto 0);
-           collision      : out std_logic);
+           collision      : out std_logic;
+           offset         : in integer);
 
   end component;
 begin
   
-  PM : ett_annat_pic_mem port map (clk=>clk,
-                                   we=>'0',
-                                   data_in=>data_in,
-                                   tile_x=>tile_x,
-                                   tile_y=>tile_y,
-                                   player_x=>player_x,
-                                   player_y=>player_y,
-                                   out_pixel=>pixel_from_pic_mem,
-                                   pixel_x=>Xpixel,
-                                   pixel_y=>Ypixel,
-                                   collision=>collision);
-    
+  PM : pic_mem port map (clk=>clk,
+                         we=>'0',
+                         data_in=>data_in,
+                         tile_x=>tile_x,
+                         tile_y=>tile_y,
+                         player_x=>player_x,
+                         player_y=>player_y,
+                         out_pixel=>pixel_from_pic_mem,
+                         pixel_x=>Xpixel,
+                         pixel_y=>Ypixel,
+                         collision=>collision,
+                         offset=>offset);
+
+  
   -- Clock divisor
   -- Divide system clock (100 MHz) by 4
   process(clk)
@@ -93,7 +97,23 @@ begin
 	
   -- 25 MHz clock (one system clock pulse width)
   Clk25 <= '1' when (ClkDiv = 3) else '0';
+
+  
+  -- Timer for the offset updating speed
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if offset_count = OFFSET_UPDATE_LATENCY then
+        offset_count <= (others => '0');
+      else
+	offset_count <= offset_count + 1;
+      end if;
+    end if;
+  end process;
 	
+  -- 25 MHz clock (one system clock pulse width)
+  offset_clk <= '1' when (offset_count = OFFSET_UPDATE_LATENCY) else '0';
+
 	
   -- Horizontal pixel counter
 
@@ -154,6 +174,21 @@ begin
           else
             Ypixel <= Ypixel + 1;
           end if;
+        end if;
+      end if;
+    end if;
+  end process;
+
+
+  --Offset counter
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if offset_clk = '1' then
+        if offset = 1024 then
+          offset <= 0;
+        else
+          offset <= offset + 1;
         end if;
       end if;
     end if;
