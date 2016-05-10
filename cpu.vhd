@@ -48,6 +48,13 @@ architecture Behavioral of CPU is
   signal alu_and : std_logic_vector(15 downto 0);
   signal alu_or : std_logic_vector(15 downto 0);
   signal alu_xor : std_logic_vector(15 downto 0);
+
+  --ran_gen signals
+  signal ran_nr : std_logic_vector(31 downto 0) := (others => '0');
+  signal ran_bit : std_logic;
+  -- init value for new_ran is seed
+  signal new_ran : std_logic_vector(31 downto 0) := (others => '0');
+                                                                      
   
   -- Flags
   signal n_flag : std_logic;
@@ -235,6 +242,8 @@ begin  -- Behavioral
                 reg2 when "1001",
                 reg3 when "1010",
                 reg4 when "1011",
+                ran_nr(31 downto 16) when "1100",
+    
                 data_bus when others;
 
 
@@ -427,6 +436,18 @@ begin  -- Behavioral
 
 
 
+    end if;
+  end process;
+
+  --ran_gen
+  ran_bit <= new_ran(31) xor new_ran(29) xor new_ran(25) xor new_ran(24);
+  ran_nr <= new_ran;
+
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      new_ran(31 downto 1) <= new_ran(30 downto 0);
+      new_ran(0) <= ran_bit; 
     end if;
   end process;
   
