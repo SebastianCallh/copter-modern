@@ -13,7 +13,8 @@ entity CPU is
            reset               : in std_logic;
            player_x            : out integer;
            player_y            : out integer;
-           input               : in std_logic);   
+           input               : in std_logic;
+           new_column          : in std_logic);   
     
  
 end CPU;
@@ -53,7 +54,7 @@ architecture Behavioral of CPU is
   signal ran_nr : std_logic_vector(31 downto 0) := (others => '0');
   signal ran_bit : std_logic;
   -- init value for new_ran is seed
-  signal new_ran : std_logic_vector(31 downto 0) := (others => '0');
+  signal new_ran : std_logic_vector(31 downto 0) := "11110100101101111100001101000010";
                                                                       
   
   -- Flags
@@ -82,6 +83,7 @@ architecture Behavioral of CPU is
   constant RESET_INTERRUPT_VECTOR : std_logic_vector(7 downto 0) := x"DC";  --220
   constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(7 downto 0) := x"E6"; --230
   constant INPUT_INTERRUPT_VECTOR : std_logic_vector(7 downto 0) := x"F0";  --240
+  constant NEW_COLUMN_INTERUPT_VECTOR : std_logic_vector(7 downto 0) := x"FA";  --250
 
   -- PMEM (Max is 65535 for 16 bit addresses)
   type ram_t is array (0 to 4096) of std_logic_vector(15 downto 0);
@@ -326,6 +328,9 @@ begin  -- Behavioral
         elsif input = '1' then 
           micro_pc <= INPUT_INTERRUPT_VECTOR;
 
+        elsif new_column = '1' then
+          micro_pc <= NEW_COLUMN_INTERUPT_VECTOR;
+          
         else
           micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
         end if;
