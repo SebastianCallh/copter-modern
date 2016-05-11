@@ -91,8 +91,8 @@ architecture Behavioral of CPU is
   -- PMEM (Max is 65535 for 16 bit addresses)
   type ram_t is array (0 to 4096) of std_logic_vector(15 downto 0);
   signal pmem : ram_t := (
-    "0001110101100000",                 -- jmp absolute test
-    "0000000000001011",
+    "0001111100000000",                 -- jmp absolute test
+    "0000000000000000",
     "0000000010000000",                 
     "0000000010000000",
     "0000000000000000",
@@ -141,8 +141,9 @@ architecture Behavioral of CPU is
     "001000010000001100000000",  -- 1C:jmp      PC <= asr
     "001001010000001100000000",  -- 1D:lr       res <= asr  (load res)
     "001001000000001100000000",  -- 1E:lar      alu_res <= asr (load alu_res)
-    "",
-    "",
+    "000000000000100100000000",
+    "000000000000101000000000",
+    "000000000000001100000000",
  --   "", --
     others => "000000000000000000000000");
 
