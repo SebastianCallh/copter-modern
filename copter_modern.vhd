@@ -72,8 +72,8 @@ architecture Behavioral of copter_modern is
   signal	tile_x          : std_logic_vector(9 downto 0);         -- tile-x where to save it
   signal	tile_y          : std_logic_vector(8 downto 0);         -- tile-y where to save it
   
-  signal	player_x        : integer;                              -- players pixel-x
-  signal	player_y        : integer;                              -- players pixel-y
+  signal	player_x_s        : integer;                              -- players pixel-x
+  signal	player_y_s        : integer;                              -- players pixel-y
   
   signal	collision       : std_logic;                            -- collision interrupt flag
   signal        input_local     : std_logic;                            -- input (from KBD_ENC to CPU)
@@ -83,6 +83,7 @@ architecture Behavioral of copter_modern is
 begin
 
   keypress <= input_local;
+
   -- keyboard encoder component connection
   KE : KBD_ENC port map(clk=>clk,
                         rst=>rst,
@@ -96,8 +97,8 @@ begin
                           vgaRed=>vgaRed,
                           vgaGreen=>vgaGreen,
                           vgaBlue=>vgaBlue,
-                          player_x=>player_x,
-                          player_y=>player_y,
+                          player_x=>player_x_s,
+                          player_y=>player_y_s,
                           collision=>collision,
                           Hsync=>Hsync,
                           Vsync=>Vsync,
@@ -107,8 +108,8 @@ begin
   CP : CPU port map(clk=>clk,
                     collision=>collision,
                     reset=>rst,
-                    player_x=>player_x,
-                    player_y=>player_y,
+                    player_x=>player_x_s,
+                    player_y=>player_y_s,
                     input=>input_local,
                     new_column=>new_column);
   

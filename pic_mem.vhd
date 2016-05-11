@@ -24,8 +24,8 @@ end pic_mem;
 	
 -- architecture
 architecture Behavioral of pic_mem is
-  signal sprite_x_mod : integer range 0 to 15;
-  signal sprite_y_mod : integer range 0 to 15;
+  signal sprite_x_mod : integer;
+  signal sprite_y_mod : integer;
 
   signal tile_pixel : std_logic_vector(7 downto 0);
   signal sprite_pixel : std_logic_vector(7 downto 0);
@@ -37,7 +37,7 @@ architecture Behavioral of pic_mem is
   constant SCREEN_WIDTH : integer := 640;
   
   constant TILE_SIZE : integer := 8;
-  constant SPRITE_SIZE : integer := 16;
+  constant SPRITE_SIZE : integer := 32;
   
   -- 8x8 Tile grid (1024 / 8) * (480 / 8) = 128 * 60 = 4800 => 4096
   type grid_ram is array (0 to 7679) of std_logic_vector(0 downto 0);
@@ -125,8 +125,8 @@ begin
   end process;
 
   --modulus sprite_size
-  sprite_x_mod <= (to_integer(pixel_x) - player_x);  -- mod 16
-  sprite_y_mod <= (to_integer(pixel_y) - player_y);  -- mod 16
+  sprite_x_mod <= (to_integer(pixel_x) - player_x) /2;  -- mod 16
+  sprite_y_mod <= (to_integer(pixel_y) - player_y) /2;  -- mod 16
   
   --sprite memory
   process(clk)
@@ -134,8 +134,8 @@ begin
     if rising_edge(clk) then
       if (pixel_x >= player_x) and (pixel_y >= player_y) then
         if (pixel_x < (player_x + SPRITE_SIZE)) and (pixel_y < (player_y + SPRITE_SIZE)) then
-          end if;
-          sprite_pixel <= sprite_mem((sprite_y_mod * SPRITE_SIZE) + sprite_x_mod);
+         
+          sprite_pixel <= sprite_mem((sprite_y_mod * SPRITE_SIZE/2) + sprite_x_mod);
         else
           sprite_pixel <= x"00";
         end if;

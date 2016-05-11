@@ -34,12 +34,15 @@ architecture Behavioral of CPU is
   signal pmem_res : std_logic_vector(15 downto 0);
 
   -- Registers
-  signal reg1 : std_logic_vector(15 downto 0);
+  signal reg1 : std_logic_vector(15 downto 0) := "0000000000000000";
   signal reg2 : std_logic_vector(15 downto 0);
   signal reg3 : std_logic_vector(15 downto 0);
   signal reg4 : std_logic_vector(15 downto 0);
 
-
+  -- Pixels
+  signal player_x_internal : integer;
+  signal player_y_internal : integer;
+  
   -- Micro
   signal micro_instr : std_logic_vector(23 downto 0);
   signal micro_pc : std_logic_vector(7 downto 0) := "00000000";
@@ -91,10 +94,10 @@ architecture Behavioral of CPU is
   -- PMEM (Max is 65535 for 16 bit addresses)
   type ram_t is array (0 to 4096) of std_logic_vector(15 downto 0);
   signal pmem : ram_t := (
-    "0001111100000000",                 -- jmp absolute test
-    "0000000000000000",
-    "0000000010000000",                 
-    "0000000010000000",
+    "0010101100000000",                 
+    "0010010000000000",
+    "0000000100000000",                 
+    "0000000100000000",
     "0000000000000000",
     "0000000000000000",
     "0000000000000000",
@@ -109,16 +112,32 @@ architecture Behavioral of CPU is
   -- micro-MEM (Max is 255 for 8 bit addresses)
   type micro_mem_t is array (0 to 255) of std_logic_vector(23 downto 0);
   signal micro_mem : micro_mem_t := (
-    "000100100000111100000000",  -- check for interrupts, ASR <= PC
-    "001101100000000000000000",  -- fetch instruction (only 16 bits)
+  
+    "000100100000111100000000",  -- check for interrupts, ASR <= PC   
+    "001100000000000000000000",  -- fetch instruction (only 16 bits)
                                  -- and check for 32 bit instruction
-    "000000001000100000000101",  -- if 16 bit fetch next 8
+    "001101100000000000000000",         
+    "000000001000100000010100",  -- if 16 bit fetch next 8
     "000100101000000000000000",  -- asr <= pc, pc++
+    "001100000000000000000000",  --             fetch pmem(asr)
     "001101110000000000000000",  -- ir(15 downto 0) <= pmem(asr)
-    "000000000000001000000000",  -- 05:check adress mod
-    "001100100000000100000000",  -- 06:absolute asr <= pmem(asr)
-    "001100100000000000000000",  -- 07:direct   asr <= pmem(asr)
+    "000000000000001000000000",  -- 07:check adress mod
+    "001100000000000000000000",  -- 08:ABSOLUTE fetch pmem(asr)
     "001100100000000100000000",  --             asr <= pmem(asr)
+    "001100000000000000000000",  -- 0A:DIRECT   fetch pmem(asr)
+    "001100100000000000000000",  --             asr <= pmem(asr)
+    "001100000000000000000000",  --             fetch pmem(asr)
+    "001100100000000100000000",  --             asr <= pmem(asr)
+
+    "001100000000000000000000",  -- 0E:INDIRECT fetch pmem(asr)
+    "001100100000000000000000",  --             asr <= pmem(asr)
+    "001100000000000000000000",  --             fetch pmem(asr)
+    "001100100000000000000000",  --             asr <= pmem(asr)
+    "001100000000000000000000",  --             fetch pmem(asr)
+    "001100100000000100000000",  --             asr <= pmem(asr)
+
+    "000000000000000100000000",  --14:OP        micro_pc <= OP
+    
     "001011000000001100000000",  -- 09:mv       pmem(res) <= asr
     "001100000001000000000000",  -- 0A:add      alu_res += pmem(asr)
     "010011000000001100000000",  --             pmem(res) <= alu_res
@@ -136,28 +155,32 @@ architecture Behavioral of CPU is
     "010011000000001100000000",  --             pmem(res) <= alu_res
     "001100000101000000000000",  -- 18:or       alu_res = alu_res or pmem(asr)
     "010011000000001100000000",  --             pmem(res) <= alu_res
-    "001100000110000000000000",  -- 1A:xor      alu_res = alu_res xor pmem(asr)
+    "001100000110000000000000",  -- 1B:xor      alu_res = alu_res xor pmem(asr)
     "010011000000001100000000",  --             pmem(res) <= alu_res
-    "001000010000001100000000",  -- 1C:jmp      PC <= asr
-    "001001010000001100000000",  -- 1D:lr       res <= asr  (load res)
-    "001001000000001100000000",  -- 1E:lar      alu_res <= asr (load alu_res)
-    "000000000000100100000000",
-    "000000000000101000000000",
-    "000000000000001100000000",
+    "001000010000001100000000",  -- 1D:jmp      PC <= asr
+    "001001010000001100000000",  -- 1E:lr       res <= asr  (load res)
+    "001001000000001100000000",  -- 1F:lar      alu_res <= asr (load alu_res)
+    "111000000000000000000000",  -- 2B:upd 
+    "111100000000000000000000",
+    "000000000000001100000000",   
+    "000000000000000100000000",  --23:direct to op
+    "100000010000001100000000",  --24:    pc <= reg1
  --   "", --
     others => "000000000000000000000000");
 
   
   -- ROM (mod) (Includes all 4 mods, need to be updated with correct micro-addresses)
   type mod_rom_t is array (0 to 3) of std_logic_vector(7 downto 0);
-  constant mod_rom : mod_rom_t := (x"06", x"07", x"00", x"00");
+  constant mod_rom : mod_rom_t := (x"08", x"0A", x"0E", x"00");
 
 begin  -- Behavioral
 
   -- fetching micro_instr
   micro_instr <= micro_mem(to_integer(unsigned(micro_pc)));
 
-
+  -- Pixels
+  player_x <= player_x_internal;
+  player_y <= player_y_internal;
   
   -- pc
   process(clk)
@@ -204,14 +227,20 @@ begin  -- Behavioral
         pmem_asr <= pmem(to_integer(unsigned(asr)));
       elsif TO_BUS = "1100" then
         pmem_res <= pmem(to_integer(unsigned(res)));
-      elsif SEQ = "1001" then
-        player_x <= to_integer(unsigned(pmem(to_integer(unsigned(x_pos)))));
-      elsif SEQ = "1010" then
-        player_y <= to_integer(unsigned(pmem(to_integer(unsigned(y_pos)))));
+
+      elsif FROM_BUS = "1110" then
+        pmem(to_integer(unsigned(x_pos))) <= data_bus;
+      elsif FROM_BUS = "1111" then
+        pmem(to_integer(unsigned(y_pos))) <= data_bus;     
+      elsif TO_BUS = "1110" then
+        player_x_internal <= to_integer(unsigned(pmem(to_integer(unsigned(x_pos)))));
+      elsif TO_BUS = "1111" then
+        player_y_internal <= to_integer(unsigned(pmem(to_integer(unsigned(y_pos)))));
       end if;
     end if;
   end process;
 
+  
   -- res
   process(clk)
   begin
@@ -291,10 +320,12 @@ begin  -- Behavioral
                 reg4 when "1011",
                 pmem_res when "1100",
                 ran_nr(31 downto 16) when "1101",
+                std_logic_vector(to_unsigned(player_x_internal, 16)) when "1110",
+                std_logic_vector(to_unsigned(player_y_internal, 16)) when "1111",
     
                 data_bus when others;
 
-
+  
   -- micro_pc
   process(clk)
   begin
@@ -341,6 +372,9 @@ begin  -- Behavioral
         else
           micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
         end if;
+
+      elsif SEQ = "1111" then
+        micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);         
       else
         micro_pc <= micro_pc;
       end if;
