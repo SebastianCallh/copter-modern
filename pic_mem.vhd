@@ -125,8 +125,8 @@ begin
   end process;
 
   --modulus sprite_size
-  sprite_x_mod <= player_x mod 16;  -- mod 16
-  sprite_y_mod <= player_y mod 16;  -- mod 16
+  sprite_x_mod <= (to_integer(pixel_x) - player_x);  -- mod 16
+  sprite_y_mod <= (to_integer(pixel_y) - player_y);  -- mod 16
   
   --sprite memory
   process(clk)
@@ -134,6 +134,7 @@ begin
     if rising_edge(clk) then
       if (pixel_x >= player_x) and (pixel_y >= player_y) then
         if (pixel_x < (player_x + SPRITE_SIZE)) and (pixel_y < (player_y + SPRITE_SIZE)) then
+          end if;
           sprite_pixel <= sprite_mem((sprite_y_mod * SPRITE_SIZE) + sprite_x_mod);
         else
           sprite_pixel <= x"00";
