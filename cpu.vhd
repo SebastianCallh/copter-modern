@@ -68,8 +68,8 @@ architecture Behavioral of CPU is
 
 
   -- Constants (Variables)
-  signal x_pos : std_logic_vector(15 downto 0) := "0000000000000000";
-  signal y_pos : std_logic_vector(15 downto 0) := "0000000000000001";
+  signal x_pos : std_logic_vector(15 downto 0) := "0000000000000010";
+  signal y_pos : std_logic_vector(15 downto 0) := "0000000000000011";
   
   -- Alias
   alias TO_BUS : std_logic_vector(3 downto 0) is micro_instr(23 downto 20);     -- to bus
@@ -83,9 +83,9 @@ architecture Behavioral of CPU is
   alias OP_CODE : std_logic_vector(7 downto 0) is ir(31 downto 24);
     
   -- Interrupt vectors
-  constant RESET_INTERRUPT_VECTOR : std_logic_vector(7 downto 0) := x"DC";  --220
-  constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(7 downto 0) := x"E6"; --230
-  constant INPUT_INTERRUPT_VECTOR : std_logic_vector(7 downto 0) := x"F0";  --240
+  constant RESET_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"DC";  --220
+  constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"E6"; --230
+  constant INPUT_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"F0";  --240
   constant NEW_COLUMN_INTERUPT_VECTOR : std_logic_vector(7 downto 0) := x"FA";  --250
 
   -- PMEM (Max is 65535 for 16 bit addresses)
@@ -93,8 +93,8 @@ architecture Behavioral of CPU is
   signal pmem : ram_t := (
     "0001110101100000",                 -- jmp absolute test
     "0000000000001011",
-    "0000100101100000",                 
-    "0000000000001001",
+    "0000000010000000",                 
+    "0000000010000000",
     "0000000000000000",
     "0000000000000000",
     "0000000000000000",
@@ -141,6 +141,8 @@ architecture Behavioral of CPU is
     "001000010000001100000000",  -- 1C:jmp      PC <= asr
     "001001010000001100000000",  -- 1D:lr       res <= asr  (load res)
     "001001000000001100000000",  -- 1E:lar      alu_res <= asr (load alu_res)
+    "",
+    "",
  --   "", --
     others => "000000000000000000000000");
 
@@ -168,11 +170,11 @@ begin  -- Behavioral
       --interrupts 
       elsif SEQ = "1111" then
         if reset = '1' then
-          pc <= x"00" & RESET_INTERRUPT_VECTOR;
+          pc <= RESET_INTERRUPT_VECTOR;
         elsif collision = '1' then 
-          pc <= x"00" & COLLISION_INTERRUPT_VECTOR;
+          pc <= COLLISION_INTERRUPT_VECTOR;
         elsif input = '1' then 
-          pc <= x"00" & INPUT_INTERRUPT_VECTOR;
+          pc <= INPUT_INTERRUPT_VECTOR;
         end if;
         
       end if;
@@ -335,24 +337,6 @@ begin  -- Behavioral
       elsif SEQ = "1000" then  --check for 16 bit inst
         if FETCH_NEXT = '0' then
           micro_pc <= MICRO_ADR;
-        else
-          micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
-        end if;
-        
-      --interrupts 
-      elsif SEQ = "1111" then
-        if reset = '1' then
-          micro_pc <= RESET_INTERRUPT_VECTOR;
-
-        elsif collision = '1' then 
-          micro_pc <= COLLISION_INTERRUPT_VECTOR;
-
-        elsif input = '1' then 
-          micro_pc <= INPUT_INTERRUPT_VECTOR;
-
-        elsif new_column = '1' then
-          micro_pc <= NEW_COLUMN_INTERUPT_VECTOR;
-          
         else
           micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
         end if;
