@@ -4,6 +4,7 @@ import sys
 #Splits instruction from args using spaces, so they must be separated using spaces
 #Comments can be made by separating them fro mteh code via one or several spaces
 #Only deals in hexadecimal numbers
+#Can only jump backwards using labels
 
 # MV 10    -- Save the number 10 to PMEM(RES)
 # MV &10   -- Save the number on memory location 10 to PMEM(RES)
@@ -63,13 +64,18 @@ for line in lines:
                 '01' if arg[0] is '&' else 
                 '00' for arg in args]
 
+
+    #Save all labels' line number for jumps
+    if label:
+        label_lookup[label] = str(line_nr)
+
+    #replace labels with line numbers
+    args = [label_lookup[arg] if arg in label_lookup else arg for arg in args]
+
+    print(args)    
     #remove prefixes
     args = [arg[1:] if not arg[0].isdigit() else arg for arg in args]
     
-    #Save all labels' line number for jumps
-    if label:
-        label_lookup[label] = line_nr
-
     if op and op not in op_code:
         sys.exit("Unknown op-code \'{0}\' at line {1}".format(op, line_nr))
 
