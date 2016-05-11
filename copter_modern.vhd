@@ -46,7 +46,10 @@ architecture Behavioral of copter_modern is
            player_x             : in integer;
            player_y             : in integer;
            collision            : out std_logic;
-           new_column           : out std_logic);
+           new_column           : out std_logic;
+           gap                  : in integer;
+           height               : in integer;
+           terrain_change       : out std_logic);    
   end component;
 
 
@@ -58,7 +61,11 @@ architecture Behavioral of copter_modern is
            player_x            : out integer;
            player_y            : out integer;
            input               : in std_logic;                          -- keypress input
-           new_column          : in std_logic);
+           new_column          : in std_logic;
+           gap                 : out integer;
+           height              : out integer;
+           terrain_change      : in std_logic);
+    
   end component;
 	
   -- intermediate signals between PICT_MEM and VGA_MOTOR
@@ -79,6 +86,10 @@ architecture Behavioral of copter_modern is
   signal        input_local     : std_logic;                            -- input (from KBD_ENC to CPU)
 
   signal        new_column      : std_logic;                            -- flag for computing next column
+
+  signal        gap_s           : integer;
+  signal        height_s        : integer;
+  signal        terrain_change_s : std_logic;
   
 begin
 
@@ -102,7 +113,10 @@ begin
                           collision=>collision,
                           Hsync=>Hsync,
                           Vsync=>Vsync,
-                          new_column=>new_column);
+                          new_column=>new_column,
+                          gap=>gap_s,
+                          height=>height_s,
+                          terrain_change=>terrain_change_s);
 
   -- CPU connector
   CP : CPU port map(clk=>clk,
@@ -111,7 +125,10 @@ begin
                     player_x=>player_x_s,
                     player_y=>player_y_s,
                     input=>input_local,
-                    new_column=>new_column);
+                    new_column=>new_column,
+                    gap=>gap_s,
+                    height=>height_s,
+                    terrain_change=>terrain_change_s);
   
 end Behavioral;
 

@@ -25,7 +25,10 @@ entity VGA_MOTOR is
          player_x               : in integer;
          player_y               : in integer;
          collision              : out std_logic;
-         new_column             : out std_logic);
+         new_column             : out std_logic;
+         gap                    : in integer;
+         height                 : in integer;
+         terrain_change         : out std_logic);
   
 end VGA_MOTOR;
 
@@ -66,8 +69,10 @@ architecture Behavioral of VGA_MOTOR is
            pixel_x        : in unsigned(10 downto 0);
            pixel_y        : in unsigned(9 downto 0);
            collision      : out std_logic;
-           offset         : in integer);
-
+           offset         : in integer;
+           gap            : in integer;
+           height         : in integer;
+           terrain_change : out std_logic);
   end component;
 begin
   
@@ -82,7 +87,10 @@ begin
                          pixel_x=>Xpixel,
                          pixel_y=>Ypixel,
                          collision=>collision,
-                         offset=>offset);
+                         offset=>offset,
+                         gap=>gap,
+                         height=>height,
+                         terrain_change=>terrain_change);
 
   
   -- Clock divisor

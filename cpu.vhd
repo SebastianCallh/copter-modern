@@ -14,7 +14,10 @@ entity CPU is
            player_x            : out integer;
            player_y            : out integer;
            input               : in std_logic;
-           new_column          : in std_logic);   
+           new_column          : in std_logic;
+           gap                 : out integer;
+           height              : out integer;
+           terrain_change      : in std_logic);   
     
  
 end CPU;
@@ -34,19 +37,26 @@ architecture Behavioral of CPU is
   signal pmem_res : std_logic_vector(15 downto 0);
 
   -- Registers
-  signal reg1 : std_logic_vector(15 downto 0) := "0000000000000000";
-  signal reg2 : std_logic_vector(15 downto 0);
+  signal reg1 : std_logic_vector(15 downto 0) := "0000000000000011";
+  signal reg2 : std_logic_vector(15 downto 0) := "0000000000000001";
   signal reg3 : std_logic_vector(15 downto 0);
   signal reg4 : std_logic_vector(15 downto 0);
 
   -- Pixels
-  signal player_x_internal : integer;
-  signal player_y_internal : integer;
+  signal player_x_internal : integer := 250;
+  signal player_y_internal : integer := 200;
+
+  -- Terrain signals
+  signal gap_internal : integer := 10;
+  signal height_internal : integer := 20;
   
   -- Micro
   signal micro_instr : std_logic_vector(23 downto 0);
   signal micro_pc : std_logic_vector(7 downto 0) := "00000000";
 
+  -- Interrupt alerts
+  signal terrain_prev : std_logic;
+  signal terrain_alert : std_logic;
 
    -- ALU signals
   signal alu_add : std_logic_vector(16 downto 0);
@@ -73,6 +83,8 @@ architecture Behavioral of CPU is
   -- Constants (Variables)
   signal x_pos : std_logic_vector(15 downto 0) := "0000000000000010";
   signal y_pos : std_logic_vector(15 downto 0) := "0000000000000011";
+  signal gap_pos : std_logic_vector(15 downto 0) := x"00A0";
+  signal height_pos : std_logic_vector(15 downto 0) := x"00A1";
   
   -- Alias
   alias TO_BUS : std_logic_vector(3 downto 0) is micro_instr(23 downto 20);     -- to bus
@@ -90,21 +102,22 @@ architecture Behavioral of CPU is
   constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00E6"; --230
   constant INPUT_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00F0";  --240
   constant NEW_COLUMN_INTERUPT_VECTOR : std_logic_vector(15 downto 0) := x"00FA";  --250
+  constant TERRAIN_CHANGE_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"0004"; --4
 
   -- PMEM (Max is 65535 for 16 bit addresses)
   type ram_t is array (0 to 4096) of std_logic_vector(15 downto 0);
   signal pmem : ram_t := (
-    "0010101100000000",                 
-    "0010010000000000",
-    "0000000100000000",                 
-    "0000000100000000",
+    "0011100100100000",                 -- JMP x"00" (infi-loop)
     "0000000000000000",
-    "0000000000000000",
-    "0000000000000000",
-    "0000000000000000",
-    "0000000000000000",
-    "0000000011111111",                 -- lr direct test
-    "0000000000001011",
+    "0000000000001010",                 -- HEIGHT
+    "0000000000000000",                 -- RAND
+    "0011101000100000",                 -- RES 
+    "0000000000000011",                 -- 3
+    "0100000000000000",                 -- PMEM(RES) <= RAND
+    "0010101000100000",                 -- AND
+    "0000000000000001",                 -- bit_vector
+    "0000000000000000",                 
+    "0000000000000001",
     "0000000000001000",
 
     others => "0000000000000000");
@@ -113,65 +126,96 @@ architecture Behavioral of CPU is
   type micro_mem_t is array (0 to 255) of std_logic_vector(23 downto 0);
   signal micro_mem : micro_mem_t := (
   
-    "000100100000111100000000",  -- check for interrupts, ASR <= PC   
+    "000000000000111100000000",  -- check for interrupts, ASR <= PC
+    "000100100000000000000000",
     "001100000000000000000000",  -- fetch instruction (only 16 bits)
-                                 -- and check for 32 bit instruction
-    "001101100000000000000000",         
-    "000000001000100000010100",  -- if 16 bit fetch next 8
+    "001101100000000000000000",  -- and check for 32 bit instruction
+    
+    "000000001000100000010100",  -- if 32 bit fetch next 16, else goto OP
     "000100101000000000000000",  -- asr <= pc, pc++
     "001100000000000000000000",  --             fetch pmem(asr)
     "001101110000000000000000",  -- ir(15 downto 0) <= pmem(asr)
-    "000000000000001000000000",  -- 07:check adress mod
-    "001100000000000000000000",  -- 08:ABSOLUTE fetch pmem(asr)
-    "001100100000000100000000",  --             asr <= pmem(asr)
-    "001100000000000000000000",  -- 0A:DIRECT   fetch pmem(asr)
-    "001100100000000000000000",  --             asr <= pmem(asr)
-    "001100000000000000000000",  --             fetch pmem(asr)
-    "001100100000000100000000",  --             asr <= pmem(asr)
-
-    "001100000000000000000000",  -- 0E:INDIRECT fetch pmem(asr)
-    "001100100000000000000000",  --             asr <= pmem(asr)
-    "001100000000000000000000",  --             fetch pmem(asr)
-    "001100100000000000000000",  --             asr <= pmem(asr)
-    "001100000000000000000000",  --             fetch pmem(asr)
-    "001100100000000100000000",  --             asr <= pmem(asr)
-
-    "000000000000000100000000",  --14:OP        micro_pc <= OP
+    "000000000000001000000000",  -- 08:check adress mod
     
-    "001011000000001100000000",  -- 09:mv       pmem(res) <= asr
-    "001100000001000000000000",  -- 0A:add      alu_res += pmem(asr)
+    "001100000000000000000000",  -- 09:ABSOLUTE fetch pmem(asr)
+    "001100100000000100000000",  --             asr <= pmem(asr)
+    
+    "001100000000000000000000",  -- 0B:DIRECT   fetch pmem(asr)
+    "001100100000000000000000",  --             asr <= pmem(asr)
+    "001100000000000000000000",  --             fetch pmem(asr)
+    "001100100000000100000000",  --             asr <= pmem(asr)
+
+    "001100000000000000000000",  -- 0F:INDIRECT fetch pmem(asr)
+    "001100100000000000000000",  --             asr <= pmem(asr)
+    "001100000000000000000000",  --             fetch pmem(asr)
+    "001100100000000000000000",  --             asr <= pmem(asr)
+    "001100000000000000000000",  --             fetch pmem(asr)
+    "001100100000000100000000",  --             asr <= pmem(asr)
+
+    "000000000000000100000000",  -- 15:OP       micro_pc <= OP
+    
+    "001011000000001100000000",  -- 16:mv       pmem(res) <= asr
+
+    "110000000000000000000000",  -- 17:add      fetch pmem(res)
+    "110001000000000000000000",  --             alu_res <= pmem(res)
+    "001100000000000000000000",  --             fetch pmem(asr)
+    "001100000001000000000000",  --             alu_res += pmem(asr)
     "010011000000001100000000",  --             pmem(res) <= alu_res
-    "001100000010000000000000",  -- 0C:sub      alu_res -= pmem(asr)
+
+    "110000000000000000000000",  -- 1C:sub      fetch pmem(res)
+    "110001000000000000000000",  --             alu_res <= pmem(res)    
+    "001100000000000000000000",  --             fetch pmem(asr)
+    "001100000010000000000000",  --             alu_res -= pmem(asr)
     "010011000000001100000000",  --             pmem(res) <= alu_res
-    "000000000000011100000000",  -- 0E:beq      if z = 0: u_pc <= 0 
+    
+    "000000000000011100000000",  -- 21:beq      if z = 0: u_pc <= 0 
     "001000010000001100000000",  --             PC <= asr
-    "000000000000010100000000",  -- 10:bne      if z = 1: u_pc <= 0
+    
+    "000000000000010100000000",  -- 23:bne      if z = 1: u_pc <= 0
     "001000010000001100000000",  --             PC <= asr
-    "000000000000011000000000",  -- 12:bn       if n = 0: u_pc <= 0 
+    
+    "000000000000011000000000",  -- 25:bn       if n = 0: u_pc <= 0 
     "001000010000001100000000",  --             PC <= asr
-    "001100000011000000000000",  -- 14:not      alu_res = not pmem(asr)
+
+    "001100000000000000000000",  -- 27:not      fetch pmem(asr)
+    "001100000011000000000000",  --             alu_res <= not pmem(asr)
     "010011000000001100000000",  --             pmem(res) <= alu_res
-    "001100000100000000000000",  -- 16:and      alu_res = alu_res and pmem(asr)
+
+    "110000000000000000000000",  -- 2A:and      fetch pmem(res)
+    "110001000000000000000000",  --             alu_res <= pmem(res)    
+    "001100000000000000000000",  --             fetch pmem(asr)
+    "001100000100000000000000",  --             alu_res <= alu_res and pmem(asr)
     "010011000000001100000000",  --             pmem(res) <= alu_res
-    "001100000101000000000000",  -- 18:or       alu_res = alu_res or pmem(asr)
+
+    "110000000000000000000000",  -- 2F:or       fetch pmem(res)
+    "110001000000000000000000",  --             alu_res <= pmem(res)    
+    "001100000000000000000000",  --             fetch pmem(asr)    
+    "001100000101000000000000",  --             alu_res <= alu_res or pmem(asr)
     "010011000000001100000000",  --             pmem(res) <= alu_res
-    "001100000110000000000000",  -- 1B:xor      alu_res = alu_res xor pmem(asr)
+
+    "110000000000000000000000",  -- 34:xor      fetch pmem(res)
+    "110001000000000000000000",  --             alu_res <= pmem(res)    
+    "001100000000000000000000",  --             fetch pmem(asr)        
+    "001100000110000000000000",  --             alu_res = alu_res xor pmem(asr)
     "010011000000001100000000",  --             pmem(res) <= alu_res
-    "001000010000001100000000",  -- 1D:jmp      PC <= asr
-    "001001010000001100000000",  -- 1E:lr       res <= asr  (load res)
-    "001001000000001100000000",  -- 1F:lar      alu_res <= asr (load alu_res)
-    "111000000000000000000000",  -- 2B:upd 
-    "111100000000000000000000",
-    "000000000000001100000000",   
-    "000000000000000100000000",  --23:direct to op
-    "100000010000001100000000",  --24:    pc <= reg1
+   
+    "001000010000001100000000",  -- 39:jmp      PC <= asr
+    "001001010000001100000000",  -- 3A:res      res <= asr  (load res)
+    "001001000000001100000000",  -- 3B:alu      alu_res <= asr (load alu_res)
+    "111000000000000000000000",  -- 3C:upd      data_bus <= pmem(x_pos)
+    "111100000000000000000000",  --             data_bus <= pmem(y_pos)
+    "101100000000000000000000",  --             data_bus <= pmem(height_pos)
+    "000000000000001100000000",  --             micro_pc <= 0
+    "110111000000001100000000",  -- 40:ran      alu_res <= rand_nr
+
+    "100000010000001100000000",  -- 3F:         pc <= reg1
  --   "", --
     others => "000000000000000000000000");
 
   
   -- ROM (mod) (Includes all 4 mods, need to be updated with correct micro-addresses)
   type mod_rom_t is array (0 to 3) of std_logic_vector(7 downto 0);
-  constant mod_rom : mod_rom_t := (x"08", x"0A", x"0E", x"00");
+  constant mod_rom : mod_rom_t := (x"09", x"0B", x"0F", x"00");
 
 begin  -- Behavioral
 
@@ -181,6 +225,11 @@ begin  -- Behavioral
   -- Pixels
   player_x <= player_x_internal;
   player_y <= player_y_internal;
+
+  -- Terrain
+  gap <= gap_internal;
+  height <= height_internal;
+  
   
   -- pc
   process(clk)
@@ -199,9 +248,18 @@ begin  -- Behavioral
           pc <= COLLISION_INTERRUPT_VECTOR;
         elsif input = '1' then 
           pc <= INPUT_INTERRUPT_VECTOR;
+        elsif terrain_alert = '1' then
+          terrain_alert <= '0';
+          pc <= TERRAIN_CHANGE_INTERRUPT_VECTOR;
         end if;
-        
       end if;
+
+
+      if terrain_change = '1' and terrain_prev = '0' then
+          terrain_alert <= '1';
+      end if;
+          terrain_prev <= terrain_change;
+      
     end if;
   end process;
 
@@ -236,6 +294,12 @@ begin  -- Behavioral
         player_x_internal <= to_integer(unsigned(pmem(to_integer(unsigned(x_pos)))));
       elsif TO_BUS = "1111" then
         player_y_internal <= to_integer(unsigned(pmem(to_integer(unsigned(y_pos)))));
+
+
+      elsif FROM_BUS = "1011" then
+        pmem(to_integer(unsigned(height_pos))) <= data_bus;
+      elsif TO_BUS = "1011" then
+        height_internal <= to_integer(unsigned(pmem(to_integer(unsigned(height_pos)))));
       end if;
     end if;
   end process;
@@ -299,7 +363,7 @@ begin  -- Behavioral
   begin
     if rising_edge(clk) then
       if FROM_BUS = "1011" then
-        reg4 <= data_bus;
+        --reg4 <= data_bus; HIJACKED BY HEIGHT
       end if;
     end if;
   end process;
@@ -317,7 +381,7 @@ begin  -- Behavioral
                 reg1 when "1000",
                 reg2 when "1001",
                 reg3 when "1010",
-                reg4 when "1011",
+                std_logic_vector(to_unsigned(height_internal, 16)) when "1011",       --reg4 (hijacked by height)
                 pmem_res when "1100",
                 ran_nr(31 downto 16) when "1101",
                 std_logic_vector(to_unsigned(player_x_internal, 16)) when "1110",

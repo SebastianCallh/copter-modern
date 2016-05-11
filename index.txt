@@ -17,22 +17,24 @@
 0000    NOP
 0001    PC
 0010    ASR
-0011    PMEM(ASR)
+0011    PMEM(ASR)*
 	
 0100    ALU_RES
-0101    RES (write only)
+0101    RES
 0110    IR(31 DOWNTO 16)
 0111	IR(15 DOWNTO 0)
 	
 1000    REG1
 1001    REG2
 1010    REG3
-1011    REG4
+1011    HEIGHT (I'm hijacking REG4)*
 	
-1100    PMEM(RES)
+1100    PMEM(RES)*
 1101    RAN_NR
-1110	X_POS
-1111	Y_POS
+1110	PMEM(X_POS)*
+1111	PMEM(Y_POS)*
+
+* = requires fetching (due to reading from memory)
 
 
 ------ ALU ------
@@ -116,17 +118,19 @@
 -------- OP-CODES ---------
 ----------------------------
 
-MV  = x"09"
-ADD = x"0A"
-SUB = x"0C"
-BEQ = x"0E"
-BNE = x"10"
-BN  = x"12"
-NOT = x"14"
-AND = x"16"
-OR  = x"18"
-XOR = x"1A"
-JMP = x"1C"
-LR  = x"1D"  (LOAD RES)
-LAR = x"1E"  (LOAD ALU_RES)
+MV  = x"15"
+ADD = x"16"
+SUB = x"1B"
+BEQ = x"20"
+BNE = x"22"
+BN  = x"24"
+NOT = x"26"
+AND = x"29"
+OR  = x"2E"
+XOR = x"33"
+JMP = x"38"
+RES = x"39"  (LOAD RES)
+ALU = x"3A"  (LOAD ALU_RES)
+UPD = x"3B"  (UPDATE POS)
+RAN = x"3F"  
 DIE = ""
