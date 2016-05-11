@@ -83,10 +83,10 @@ architecture Behavioral of CPU is
   alias OP_CODE : std_logic_vector(7 downto 0) is ir(31 downto 24);
     
   -- Interrupt vectors
-  constant RESET_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"DC";  --220
-  constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"E6"; --230
-  constant INPUT_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"F0";  --240
-  constant NEW_COLUMN_INTERUPT_VECTOR : std_logic_vector(15 downto 0) := x"FA";  --250
+  constant RESET_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00DC";  --220
+  constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00E6"; --230
+  constant INPUT_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00F0";  --240
+  constant NEW_COLUMN_INTERUPT_VECTOR : std_logic_vector(15 downto 0) := x"00FA";  --250
 
   -- PMEM (Max is 65535 for 16 bit addresses)
   type ram_t is array (0 to 4096) of std_logic_vector(15 downto 0);
