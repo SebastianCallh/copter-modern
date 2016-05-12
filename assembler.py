@@ -22,6 +22,9 @@ def to_hex(n, s):
 def to_bin(n, s):
     return format(int(n), '0' + str(s) + 'b')
 
+def make_instr(i):
+    return 'x\"' + str(i) + '",\n'
+
 FETCH_NEXT = '100000'
 DONT_FETCH_NEXT = '00'
 NO_ARGS = '0000'
@@ -72,7 +75,6 @@ for line in lines:
     #replace labels with line numbers
     args = [label_lookup[arg] if arg in label_lookup else arg for arg in args]
 
-    print(args)    
     #remove prefixes
     args = [arg[1:] if not arg[0].isdigit() else arg for arg in args]
     
@@ -82,13 +84,12 @@ for line in lines:
     #Construct the final machine code instruction
     if op in has_one_arg or op in has_two_args:
         if op in has_two_args:
-            instructions += op_code['RES'] + to_hex(mods[1] + FETCH_NEXT + to_bin(args[1], 16), 6) + '\n'
-        instructions += op_code[op] + to_hex(mods[0] + FETCH_NEXT + to_bin(args[0], 16), 6) + '\n'
+            instructions += make_instr(op_code['RES'] + to_hex(mods[1] + FETCH_NEXT + to_bin(args[1], 16), 6))
+        instructions += make_instr(op_code[op] + to_hex(mods[0] + FETCH_NEXT + to_bin(args[0], 16), 6))
     else:
-        instructions += op_code[op] + to_hex('00' + DONT_FETCH_NEXT, 2) + NO_ARGS + '\n'
+        instructions += make_instr(op_code[op] + to_hex('00' + DONT_FETCH_NEXT, 2) + NO_ARGS)
 
     line_nr += 1
-print(instructions)
 print('Machine code successfully saved to file "machine_code"')
 f = open('machine_code','w')
 f.write(instructions) 
