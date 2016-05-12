@@ -34,18 +34,29 @@ if not len(sys.argv) is 2:
     sys.exit('No code to assemble supplied')
     
 op_code = {
-    'MV'  : '01',
-    'ADD' : '02',
-    'SUB' : '03',
-    'BEQ' : '04',
-    'BNE' : '05',
-    'BN'  : '06',
-    'JMP' : '07',
-    'RES' : '08',
+    'MV'  : '16',
+    'ADD' : '17',
+    'SUB' : '1B',
+    'BEQ' : '1F',
+    'BNE' : '21',
+    'BN'  : '23',
+    'JMP' : '33',
+    'RES' : '34',
+    'NOT' : '25',
+    'AND' : '27',
+    'OR' : '2B',
+    'XOR' : '2F',
+    'ALU' : '35',
+    'UPD' : '36',
+    'RAN' : '3B',
+    'INC' : '3C',
+    'CMP' : '40',
+    'DEC' : '43',
+
     'DIE' : 'FF'
     }
-has_one_arg = ['BEQ', 'BNE', 'BN', 'JMP', 'RES']
-has_two_args = ['MV', 'ADD', 'SUB']
+has_one_arg = ['BEQ', 'BNE', 'BN', 'JMP', 'RES', 'INC', 'DEC', 'RAN']
+has_two_args = ['MV', 'ADD', 'SUB', 'NOT', 'OR', 'XOR',  'CMP', 'AND' ]
 prefixes = ['&', '*']
 
 lines = []
