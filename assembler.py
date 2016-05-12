@@ -28,7 +28,7 @@ def make_instr(i):
 FETCH_NEXT = '100000'
 DONT_FETCH_NEXT = '00'
 NO_ARGS = '0000'
-EMPTY_INSTR = '00000000'
+EMPTY_INSTR = '0000'
 
 if not len(sys.argv) is 2:
     sys.exit('No code to assemble supplied')
@@ -104,12 +104,15 @@ for line in lines:
     #Construct the final machine code instruction
     if op in has_one_arg or op in has_two_args:
         if op in has_two_args:
-            instructions += make_instr(op_code['RES'] + to_hex(mods[1] + FETCH_NEXT + to_bin(args[1], 16), 6))
-        instructions += make_instr(op_code[op] + to_hex(mods[0] + FETCH_NEXT + to_bin(args[0], 16), 6))
+            instructions += make_instr(op_code['RES'] + to_hex(mods[1] + FETCH_NEXT, 2))
+            instructions += make_instr(to_hex(to_bin(args[1], 16), 4))
+            line_nr += 2
+        instructions += make_instr(op_code[op] + to_hex(mods[0] + FETCH_NEXT, 2))
+        instructions += make_instr(to_hex(to_bin(args[0], 16), 4))
+        line_nr +=2
     else:
-        instructions += make_instr(op_code[op] + to_hex('00' + DONT_FETCH_NEXT, 2) + NO_ARGS)
-
-    line_nr += 1
+        instructions += make_instr(op_code[op] + to_hex('00' + DONT_FETCH_NEXT, 2))
+        line_nr += 1
 
 f = open('machine_code','w')
 f.write(instructions) 
