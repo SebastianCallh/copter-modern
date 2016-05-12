@@ -27,12 +27,12 @@
 1000    REG1
 1001    REG2
 1010    REG3
-1011    HEIGHT (I'm hijacking REG4)*
+1011    REG4
 	
 1100    PMEM(RES)*
 1101    RAN_NR
-1110	PMEM(X_POS)*
-1111	PMEM(Y_POS)*
+1110	
+1111	
 
 * = requires fetching (due to reading from memory)
 
@@ -118,19 +118,22 @@
 -------- OP-CODES ---------
 ----------------------------
 
-MV  = x"15"
-ADD = x"16"
+MV  = x"16"
+ADD = x"17"
 SUB = x"1B"
-BEQ = x"20"
-BNE = x"22"
-BN  = x"24"
-NOT = x"26"
-AND = x"29"
-OR  = x"2E"
-XOR = x"33"
-JMP = x"38"
-RES = x"39"  (LOAD RES)
-ALU = x"3A"  (LOAD ALU_RES)
-UPD = x"3B"  (UPDATE POS)
-RAN = x"3F"  
+BEQ = x"1F"
+BNE = x"21"
+BN  = x"23"
+NOT = x"25"
+AND = x"27"
+OR  = x"2B"
+XOR = x"2F"
+JMP = x"33"
+RES = x"34"  (LOAD RES)
+ALU = x"35"  (LOAD ALU_RES)
+UPD = x"36"  (UPDATE POS)
+RAN = x"3B"  
+INC = x"3C"  (INCREASE TERRAIN HEIGHT)
+CMP = x"40"
+DEC = x"43"  (DECREASE TERRAIN HEIGHT)
 DIE = ""

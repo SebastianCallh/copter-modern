@@ -179,7 +179,7 @@ begin
 
 
  -- Offset counter thingy
-  terrain_change <= '1' when (offset mod 32) = 1 else
+  terrain_change <= '1' when (offset mod 8) = 1 else
                     '0';
   
  process(clk)
