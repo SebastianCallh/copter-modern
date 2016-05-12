@@ -28,6 +28,7 @@ def make_instr(i):
 FETCH_NEXT = '100000'
 DONT_FETCH_NEXT = '00'
 NO_ARGS = '0000'
+EMPTY_INSTR = '00000000'
 
 if not len(sys.argv) is 2:
     sys.exit('No code to assemble supplied')
@@ -56,10 +57,24 @@ instructions = ''
 
 for line in lines:
     split_string = line.split('\t')
-    label, op_and_args = split_string[0], split_string[1].split()
+    label = split_string[0]
+    
+    
+    #Save all labels' line number for jumps
+    if label:
+        label_lookup[label.replace('\n', '')] = str(line_nr)
+
+    if len(split_string) == 1:
+        instructions += make_instr(EMPTY_INSTR)
+        continue
+
+    op_and_args = split_string[1].split()
     op = op_and_args[0]
     machine_instr = ''
-    
+
+    if op and op not in op_code:
+        sys.exit('Unknown op-code \'{0}\' at line {1}'.format(op, line_nr))
+
     #Don't create any mods if there are no args
     if len(split_string) >= 2:
         args = op_and_args[1:] 
@@ -68,19 +83,12 @@ for line in lines:
                 '00' for arg in args]
 
 
-    #Save all labels' line number for jumps
-    if label:
-        label_lookup[label] = str(line_nr)
-
     #replace labels with line numbers
     args = [label_lookup[arg] if arg in label_lookup else arg for arg in args]
 
     #remove prefixes
     args = [arg[1:] if not arg[0].isdigit() else arg for arg in args]
     
-    if op and op not in op_code:
-        sys.exit("Unknown op-code \'{0}\' at line {1}".format(op, line_nr))
-
     #Construct the final machine code instruction
     if op in has_one_arg or op in has_two_args:
         if op in has_two_args:
@@ -90,6 +98,7 @@ for line in lines:
         instructions += make_instr(op_code[op] + to_hex('00' + DONT_FETCH_NEXT, 2) + NO_ARGS)
 
     line_nr += 1
+
 print('Machine code successfully saved to file "machine_code"')
 f = open('machine_code','w')
 f.write(instructions) 
