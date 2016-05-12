@@ -46,13 +46,14 @@ op_code = {
     }
 has_one_arg = ['BEQ', 'BNE', 'BN', 'JMP', 'RES']
 has_two_args = ['MV', 'ADD', 'SUB']
+prefixes = ['&', '*']
 
 lines = []
 with open(sys.argv[1]) as f:
     lines = f.readlines()
 
 line_nr = 0;
-label_lookup = {}
+labels = {}
 instructions = ''
 
 for line in lines:
@@ -62,10 +63,11 @@ for line in lines:
     
     #Save all labels' line number for jumps
     if label:
-        label_lookup[label.replace('\n', '')] = str(line_nr)
+        labels[label.replace('\n', '')] = str(line_nr)
 
     if len(split_string) == 1:
         instructions += make_instr(EMPTY_INSTR)
+        line_nr += 1
         continue
 
     op_and_args = split_string[1].split()
@@ -82,13 +84,18 @@ for line in lines:
                 '01' if arg[0] is '&' else 
                 '00' for arg in args]
 
-
-    #replace labels with line numbers
-    args = [label_lookup[arg] if arg in label_lookup else arg for arg in args]
-
+    print('labels')
+    print(labels)
+    print('removing prefixes')
+    print(args)
     #remove prefixes
-    args = [arg[1:] if not arg[0].isdigit() else arg for arg in args]
-    
+    args = [arg[1:] if arg[0] in prefixes else arg for arg in args]
+    print(args)
+    print('replacing labels')
+    print(args)
+    #replace labels with line numbers
+    args = [labels[arg] if arg in labels else arg for arg in args]
+    print(args)
     #Construct the final machine code instruction
     if op in has_one_arg or op in has_two_args:
         if op in has_two_args:
