@@ -84,18 +84,12 @@ for line in lines:
                 '01' if arg[0] is '&' else 
                 '00' for arg in args]
 
-    print('labels')
-    print(labels)
-    print('removing prefixes')
-    print(args)
     #remove prefixes
     args = [arg[1:] if arg[0] in prefixes else arg for arg in args]
-    print(args)
-    print('replacing labels')
-    print(args)
+
     #replace labels with line numbers
     args = [labels[arg] if arg in labels else arg for arg in args]
-    print(args)
+
     #Construct the final machine code instruction
     if op in has_one_arg or op in has_two_args:
         if op in has_two_args:
@@ -106,7 +100,6 @@ for line in lines:
 
     line_nr += 1
 
-print('Machine code successfully saved to file "machine_code"')
 f = open('machine_code','w')
 f.write(instructions) 
 f.close()
