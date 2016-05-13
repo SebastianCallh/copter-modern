@@ -53,7 +53,11 @@ op_code = {
     'INC' : '3C',
     'CMP' : '40',
     'DEC' : '43',
-
+    'SRET': '',
+    'TRET' : '',
+    'CRET' : '',
+    'RRET' : '',
+    'TRET' : '',
     'DIE' : 'FF'
     }
 has_one_arg = ['BEQ', 'BNE', 'BN', 'JMP', 'RES', 'INC', 'DEC', 'RAN']

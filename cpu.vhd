@@ -35,6 +35,7 @@ architecture Behavioral of CPU is
   signal ir : std_logic_vector(31 downto 0);
   signal pmem_asr : std_logic_vector(15 downto 0);
   signal pmem_res : std_logic_vector(15 downto 0);
+  signal return_adress : std_logic_vector(15 downto 0);
 
   -- Registers
   signal reg1 : std_logic_vector(15 downto 0) := "0000000000000011";
@@ -42,79 +43,12 @@ architecture Behavioral of CPU is
   signal reg3 : std_logic_vector(15 downto 0);
   signal reg4 : std_logic_vector(15 downto 0);
 
-  -- Pixels
-  signal player_x_internal : integer;
-  signal player_y_internal : integer;
-
- 
-  
-  -- Terrain signals
-  signal gap_internal : integer := 60;
-  signal height_internal : integer := 0;
-  
-  -- Micro
-  signal micro_instr : std_logic_vector(23 downto 0);
-  signal micro_pc : std_logic_vector(7 downto 0) := "00000000";
-
-  -- Interrupt alerts
-  signal terrain_prev : std_logic;
-  signal terrain_alert : std_logic;
-  
-  signal input_prev : std_logic;
-  signal input_alert : std_logic;
-  
-  signal collision_prev : std_logic;
-  signal collision_alert : std_logic;
-  
-  signal reset_prev : std_logic;
-  signal reset_alert : std_logic;
-  
-
-   -- ALU signals
-  signal alu_add : std_logic_vector(16 downto 0);
-  signal alu_sub : std_logic_vector(16 downto 0);
-  signal alu_not : std_logic_vector(15 downto 0);
-  signal alu_and : std_logic_vector(15 downto 0);
-  signal alu_or : std_logic_vector(15 downto 0);
-  signal alu_xor : std_logic_vector(15 downto 0);
-
-  --ran_gen signals
-  signal ran_nr : std_logic_vector(31 downto 0) := (others => '0');
-  signal ran_bit : std_logic;
-  -- init value for new_ran is seed
-  signal new_ran : std_logic_vector(31 downto 0) := "10101010001010110010110001010010";
-                                                                      
-  
-  -- Flags
-  signal n_flag : std_logic;
-  signal z_flag : std_logic;
-  signal o_flag : std_logic;
-  signal c_flag : std_logic;
-
-
-  -- Constants (Variables)
-  signal x_pos : std_logic_vector(15 downto 0) := x"0001";
-  signal y_pos : std_logic_vector(15 downto 0) := x"0002";
-  signal height_pos : std_logic_vector(15 downto 0) := x"0004";
-  signal gap_pos : std_logic_vector(15 downto 0) := x"0005";
-
-  
-  -- Alias
-  alias TO_BUS : std_logic_vector(3 downto 0) is micro_instr(23 downto 20);     -- to bus
-  alias FROM_BUS : std_logic_vector(3 downto 0) is micro_instr(19 downto 16);   -- from bus
-  alias P_BIT : std_logic is micro_instr(15);                                   -- p bit
-  alias ALU_OP : std_logic_vector(2 downto 0) is micro_instr(14 downto 12);     -- alu_op
-  alias SEQ : std_logic_vector(3 downto 0) is micro_instr(11 downto 8);         -- seq
-  alias MICRO_ADR : std_logic_vector(7 downto 0) is micro_instr(7 downto 0);    -- micro address
-
-  alias FETCH_NEXT : std_logic is ir(21);
-  alias OP_CODE : std_logic_vector(7 downto 0) is ir(31 downto 24);
+   alias terrain_intr_flag : std_logic;
     
   -- Interrupt vectors
   constant RESET_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00DC";  --220
   constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00E6"; --230
   constant INPUT_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00F0";  --240
-  constant NEW_COLUMN_INTERUPT_VECTOR : std_logic_vector(15 downto 0) := x"00FA";  --250
   constant TERRAIN_CHANGE_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"0040"; --64
 
   -- PMEM (Max is 65535 for 16 bit addresses)
@@ -328,13 +262,22 @@ x"FF00",
     "101101000000000000000000",  --             alu_res <= height
     "001000000001000000000000",  --             alu_res <= alu_res + asr
     "010010110000001100000000",  --             height <= alu_res
+    
+    "001011100000001100000000",  -- 47:SRET     set return_adress
 
-    "000000000000000000000000",  --             c
-    "000000000000000000000000",  --             c
-    "000000000000000000000000",  --             c
+    "111000010000000000000000",  -- 48:TRET     return from terrain change
+    "",  --             c
 
+    "000000000000000000000000",  -- XX:IRET      return from input interrupt
+    "000000000000000000000000",  --             c    
 
-    "000000000000000000000000",  -- XX:INS      comment         
+    "000000000000000000000000",  -- XX:CRET      return from collision interrupt
+    "000000000000000000000000",  --             c    
+
+    "000000000000000000000000",  -- XX:RRET      return from reset interrupt
+    "000000000000000000000000",  --             c    
+
+    "000000000000000000000000",  -- XX:INS               
     "000000000000000000000000",  --             c    
     
  --   "", --
@@ -385,38 +328,34 @@ begin  -- Behavioral
         
       --interrupts 
       elsif SEQ = "1111" then
-        if reset_alert = '1' then
-          reset_alert <= '0';
+        if reset = '1' then
           pc <= RESET_INTERRUPT_VECTOR;
-        elsif collision_alert = '1' then
-          collision_alert <= '0';
+        elsif collision = '1' then
           pc <= COLLISION_INTERRUPT_VECTOR;
-        elsif input_alert = '1' then
-          input_alert <= '0';
+        elsif input = '1' then
           pc <= INPUT_INTERRUPT_VECTOR;
-        elsif terrain_alert = '1' then
-          terrain_alert <= '0';
+        elsif terrain = '1' then
           pc <= TERRAIN_CHANGE_INTERRUPT_VECTOR;
         end if;
       end if;
 
-      if terrain_change = '1' and terrain_prev = '0' then
-          terrain_alert <= '1';
-      end if;
-      if input = '1' and input_prev = '0' then
-          input_alert <= '1';          
-      end if;
-      if collision = '1' and collision_prev = '0' then
-          collision_alert <= '1';
-      end if;
-      if reset = '1' and reset_prev = '0' then
-          reset_alert <= '1';
-      end if;
+      --if terrain_change = '1' and terrain_prev = '0' then
+      --    terrain_alert <= '1';
+      --end if;
+      --if input = '1' and input_prev = '0' then
+      --    input_alert <= '1';          
+      --end if;
+      --if collision = '1' and collision_prev = '0' then
+      --    collision_alert <= '1';
+      --end if;
+      --if reset = '1' and reset_prev = '0' then
+      --    reset_alert <= '1';
+      --end if;
       
-      terrain_prev <= terrain_change;
-      input_prev <= input;
-      collision_prev <= collision;
-      reset_prev <= reset;
+      --terrain_prev <= terrain_change;
+      --input_prev <= input;
+      --collision_prev <= collision;
+      --reset_prev <= reset;
     end if;
   end process;
 
@@ -510,6 +449,26 @@ begin  -- Behavioral
     end if;
   end process;
 
+  -- return_adress
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if FROM_BUS = "1110" then
+        return_adress <= data_bus;
+      end if;
+    end if;
+  end process;
+
+  
+  -- interrupt_flags
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if FROM_BUS = "1111" then
+        interrupt_flags <= data_bus;
+      end if;
+    end if;
+  end process;
   
   -- Pushing data TO the bus
   with TO_BUS select
@@ -526,10 +485,10 @@ begin  -- Behavioral
                 reg4 when "1011",       
                 pmem_res when "1100",
                 ran_nr(31 downto 16) when "1101",
-
+                return_adress when "1110",
+                interrupt_flags when "1111",
                 data_bus when others;
 
-  
   -- micro_pc
   process(clk)
   begin

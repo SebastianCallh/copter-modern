@@ -9,6 +9,7 @@ RAND1
 RAND2
 P_UPD
 INPUT
+GRAV_C
 START	MV 1 RUNNING    "starting sequence"
 	MV 150 P_X
 	MV 200 P_Y
@@ -17,7 +18,7 @@ START	MV 1 RUNNING    "starting sequence"
 	MV 1 P_DY
 GAME_L	CMP 1 P_UPD    "check if player pos should update"
 	BEQ GAME_L
-	JMP PD
+	JMP PD         "Det här är mycket oklart"
 PD	UPD
 INCR	CMP 1 HEIGHT
 	BEQ GAME_L
@@ -38,6 +39,11 @@ TERR	RAN RAND1     "save random number to rand"
 	CMP 1 RAND1   "compare rand with 1"
 	BEQ DECR     "if rand = 1, decrease terrain height"
 	JMP GAME_L   "if rand /= 0 and rand /= 1 then continue gameloop without terrain change"
+
+
+
+
+
 	MV 1 RUNNING  "set the running flag to 1"
 	MV 200 P_X    "set player x"
 	MV 300 P_Y    "set player y"

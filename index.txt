@@ -31,8 +31,8 @@
 	
 1100    PMEM(RES)*
 1101    RAN_NR
-1110	
-1111	
+1110	RETURN_ADRESS
+1111	INT_FLAGS
 
 * = requires fetching (due to reading from memory)
 
@@ -48,7 +48,7 @@
 101    OR
 110    XOR
 111    
-
+ 
 ------ SEQ ------
 
 0000    micro_pc++
