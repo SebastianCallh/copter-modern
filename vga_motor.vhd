@@ -202,6 +202,7 @@ begin
   end process;
 
 
+
   --Offset counter
   process(clk)
   begin

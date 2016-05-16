@@ -86,6 +86,7 @@ begin
         PS2Data_sr(10) <= PS2Data;
 
         PS2Data_sr <= PS2Data & PS2Data_sr(10 downto 1);
+
       end if;
     end if;
   end process;
@@ -95,6 +96,7 @@ begin
   with ScanCode select
     input <= '1' when x"29",	-- space
              '0' when others;
+
   
   
   -- PS2 bit counter

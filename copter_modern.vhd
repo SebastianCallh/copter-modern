@@ -81,7 +81,7 @@ architecture Behavioral of copter_modern is
   
   signal	player_x_s        : integer;                              -- players pixel-x
   signal	player_y_s        : integer;                              -- players pixel-y
-  
+
   signal	collision       : std_logic;                            -- collision interrupt flag
   signal        input_local     : std_logic;                            -- input (from KBD_ENC to CPU)
 

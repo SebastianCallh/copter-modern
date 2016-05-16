@@ -27,7 +27,7 @@ architecture Behavioral of CPU is
 
   -- Signals
   signal data_bus : std_logic_vector(15 downto 0);
-  signal pc : std_logic_vector(15 downto 0) := x"0009";
+  signal pc : std_logic_vector(15 downto 0) := x"000C";
   signal asr : std_logic_vector(15 downto 0);
   signal alu_input : signed(15 downto 0);
   signal alu_res : std_logic_vector(15 downto 0);
@@ -46,7 +46,6 @@ architecture Behavioral of CPU is
   signal player_x_internal : integer;
   signal player_y_internal : integer;
 
- 
   
   -- Terrain signals
   signal gap_internal : integer := 60;
@@ -61,15 +60,28 @@ architecture Behavioral of CPU is
   signal terrain_alert : std_logic;
   
   signal input_prev : std_logic;
-  signal input_alert : std_logic;
+  signal press_alert : std_logic;
+  signal release_alert : std_logic;
   
   signal collision_prev : std_logic;
   signal collision_alert : std_logic;
   
   signal reset_prev : std_logic;
   signal reset_alert : std_logic;
-  
 
+  signal input_release : std_logic;
+
+  -- Move player signals
+  signal player_upd_alert : std_logic;
+  signal player_upd_counter : integer := 0;
+
+  -- Interrupt states saved
+  signal intr_pc : std_logic_vector(15 downto 0);
+  signal intr_res : std_logic_vector(15 downto 0);
+  signal intr_alu_res : std_logic_vector(15 downto 0);
+  signal intr_enable : std_logic := '1';
+
+  
    -- ALU signals
   signal alu_add : std_logic_vector(16 downto 0);
   signal alu_sub : std_logic_vector(16 downto 0);
@@ -97,7 +109,9 @@ architecture Behavioral of CPU is
   signal y_pos : std_logic_vector(15 downto 0) := x"0002";
   signal height_pos : std_logic_vector(15 downto 0) := x"0004";
   signal gap_pos : std_logic_vector(15 downto 0) := x"0005";
-
+  signal press_pos : std_logic_vector(15 downto 0) := x"000A";
+  signal release_pos : std_logic_vector(15 downto 0) := x"000B";
+  signal player_upd : std_logic_vector(15 downto 0) := x"0009";
   
   -- Alias
   alias TO_BUS : std_logic_vector(3 downto 0) is micro_instr(23 downto 20);     -- to bus
@@ -111,15 +125,23 @@ architecture Behavioral of CPU is
   alias OP_CODE : std_logic_vector(7 downto 0) is ir(31 downto 24);
     
   -- Interrupt vectors
-  constant RESET_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00DC";  --220
-  constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00E6"; --230
+  constant RESET_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00BB";  --220
+  constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00B4"; --230
   constant INPUT_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00F0";  --240
   constant NEW_COLUMN_INTERUPT_VECTOR : std_logic_vector(15 downto 0) := x"00FA";  --250
-  constant TERRAIN_CHANGE_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"0040"; --64
+  constant TERRAIN_CHANGE_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"008C";
 
+  
+  -- Player update frequency
+  constant PLAYER_UPDATE_LATENCY : integer := 1400000;  -- same as offset for now
+  constant ZERO : std_logic_vector(15 downto 0) := x"0000";
+  constant ONE : std_logic_vector(15 downto 0) := x"0001";
+
+  
   -- PMEM (Max is 65535 for 16 bit addresses)
   type ram_t is array (0 to 4096) of std_logic_vector(15 downto 0);
   signal pmem : ram_t := (
+
 x"0000",
 x"0000",
 x"0000",
@@ -129,6 +151,13 @@ x"0000",
 x"0000",
 x"0000",
 x"0000",
+x"0000",
+x"0000",
+x"0000",
+x"3420",
+x"0000",
+x"1620",
+x"0001",
 x"3420",
 x"0001",
 x"1620",
@@ -149,21 +178,88 @@ x"3420",
 x"0003",
 x"1620",
 x"0001",
+x"3420",
+x"0009",
+x"4020",
+x"0001",
+x"1F20",
+x"002c",
+x"3320",
+x"0024",
+x"3420",
+x"0009",
+x"1620",
+x"0000",
+x"3420",
+x"000a",
+x"4020",
+x"0000",
+x"1F20",
+x"0057",
+x"3420",
+x"000b",
+x"4020",
+x"0000",
+x"1F20",
+x"0046",
+x"3420",
+x"000a",
+x"1620",
+x"0000",
+x"3420",
+x"000b",
+x"1620",
+x"0000",
+x"3320",
+x"0024",
+x"3420",
+x"0002",
+x"4020",
+x"01c2",
+x"4720",
+x"0024",
+x"3420",
+x"0002",
+x"1760",
+x"0003",
+x"3420",
+x"0009",
+x"1620",
+x"0000",
 x"3600",
 x"3320",
-x"001d",
+x"0024",
+x"3420",
+x"0002",
+x"4020",
+x"0003",
+x"2320",
+x"0024",
+x"3420",
+x"0002",
+x"1B60",
+x"0003",
+x"3420",
+x"0009",
+x"1620",
+x"0000",
+x"3600",
+x"3320",
+x"0024",
 x"3420",
 x"0004",
 x"4020",
 x"0001",
 x"1F20",
-x"001d",
+x"00c3",
 x"3420",
 x"0004",
 x"1B20",
 x"0001",
+x"3600",
+x"4900",
 x"3320",
-x"001d",
+x"0024",
 x"3420",
 x"0006",
 x"1660",
@@ -177,33 +273,35 @@ x"0006",
 x"4020",
 x"003a",
 x"1F20",
-x"001d",
+x"00c3",
 x"3420",
 x"0004",
 x"1720",
 x"0001",
+x"3600",
+x"4900",
 x"3320",
-x"001d",
+x"0024",
 x"3B20",
-x"0008",
+x"0007",
 x"3420",
-x"0008",
+x"0007",
 x"2720",
 x"0003",
 x"3420",
-x"0008",
+x"0007",
 x"4020",
 x"0000",
 x"1F20",
-x"0020",
+x"0068",
 x"3420",
-x"0008",
+x"0007",
 x"4020",
 x"0001",
 x"1F20",
-x"002c",
+x"0076",
 x"3320",
-x"001d",
+x"00c3",
 x"3420",
 x"0000",
 x"1620",
@@ -225,13 +323,24 @@ x"0001",
 x"1720",
 x"0006",
 x"3420",
+x"0000",
+x"1620",
+x"0001",
+x"4900",
+x"3320",
+x"0024",
+x"3420",
+x"0000",
+x"1620",
+x"0001",
+x"3420",
 x"0002",
-x"1760",
-x"0003",
-x"1F20",
-x"0068",
+x"1620",
+x"00c8",
+x"4900",
+x"3320",
+x"0024",
 x"FF00",
-
     others => "0000000000000000");
 
   -- micro-MEM (Max is 255 for 8 bit addresses)
@@ -329,6 +438,13 @@ x"FF00",
     "001000000001000000000000",  --             alu_res <= alu_res + asr
     "010010110000001100000000",  --             height <= alu_res
 
+    "000000000000100100000000",  -- 47:bp       if n = 1: u_pc <= 0 
+    "001000010000001100000000",  --             PC <= asr
+
+
+    "000000000000101000000000",  -- 49:rfi      (return from interrupt)         
+    "000000000000001100000000",  --             micro_pc <= 0
+    
     "000000000000000000000000",  --             c
     "000000000000000000000000",  --             c
     "000000000000000000000000",  --             c
@@ -386,27 +502,37 @@ begin  -- Behavioral
       --interrupts 
       elsif SEQ = "1111" then
         if reset_alert = '1' then
+          intr_enable <= '0';
           reset_alert <= '0';
           pc <= RESET_INTERRUPT_VECTOR;
-        elsif collision_alert = '1' then
+        elsif collision_alert = '1' and intr_enable = '1' then
+          intr_enable <= '0';
           collision_alert <= '0';
+          intr_pc <= pc;
+          intr_res <= res;
+          intr_alu_res <= alu_res;
           pc <= COLLISION_INTERRUPT_VECTOR;
-        elsif input_alert = '1' then
-          input_alert <= '0';
-          pc <= INPUT_INTERRUPT_VECTOR;
-        elsif terrain_alert = '1' then
+        elsif terrain_alert = '1' and intr_enable = '1' then
+          intr_enable <= '0';
           terrain_alert <= '0';
+          intr_pc <= pc;
+          intr_res <= res;
+          intr_alu_res <= alu_res;
           pc <= TERRAIN_CHANGE_INTERRUPT_VECTOR;
         end if;
+
+      elsif SEQ = "1010" then
+        intr_enable <= '1';
+        pc <= intr_pc;
+        
       end if;
 
+      
+      
       if terrain_change = '1' and terrain_prev = '0' then
           terrain_alert <= '1';
       end if;
-      if input = '1' and input_prev = '0' then
-          input_alert <= '1';          
-      end if;
-      if collision = '1' and collision_prev = '0' then
+     if collision = '1' and collision_prev = '0' then
           collision_alert <= '1';
       end if;
       if reset = '1' and reset_prev = '0' then
@@ -414,7 +540,6 @@ begin  -- Behavioral
       end if;
       
       terrain_prev <= terrain_change;
-      input_prev <= input;
       collision_prev <= collision;
       reset_prev <= reset;
     end if;
@@ -442,7 +567,38 @@ begin  -- Behavioral
         pmem_asr <= pmem(to_integer(unsigned(asr)));
       elsif TO_BUS = "1100" then
         pmem_res <= pmem(to_integer(unsigned(res)));
+
+      elsif release_alert = '1' then
+        release_alert <= '0';
+        pmem(to_integer(unsigned(release_pos))) <= ONE;
+
+      elsif press_alert = '1' then
+        press_alert <= '0';
+        pmem(to_integer(unsigned(press_pos))) <= ONE;
+        
+      elsif player_upd_alert = '1' then
+        player_upd_alert <= '0';
+        pmem(to_integer(unsigned(player_upd))) <= ONE;
       end if;
+     
+
+      if player_upd_counter = PLAYER_UPDATE_LATENCY then
+        player_upd_alert <= '1';
+        player_upd_counter <= 0;
+      else
+        player_upd_counter <= player_upd_counter + 1;
+      end if;
+      
+
+      if input = '0' and input_prev = '1' then
+        press_alert <= '1';
+      end if;
+
+      if input = '1' and input_prev = '0' then
+        release_alert <= '1';
+      end if;
+      input_prev <= input;
+ 
     end if;
   end process;
 
@@ -453,6 +609,10 @@ begin  -- Behavioral
     if rising_edge(clk) then
       if FROM_BUS = "0101" then
         res <= data_bus;
+        
+      elsif SEQ = "1010" then
+        res <= intr_res;
+        
       end if;
     end if;
   end process;
@@ -557,7 +717,7 @@ begin  -- Behavioral
         end if;
 
       elsif SEQ = "0110"  then --jmp if N = 0
-        if n_flag = '1' then
+        if n_flag = '0' then
           micro_pc <= MICRO_ADR;
         else
           micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
@@ -577,8 +737,19 @@ begin  -- Behavioral
           micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
         end if;
 
+      elsif SEQ = "1001"  then --jmp if N = 1
+        if n_flag = '1' then
+          micro_pc <= MICRO_ADR;
+        else
+          micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
+        end if;
+        
       elsif SEQ = "1111" then
-        micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);         
+        micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
+
+      elsif SEQ = "1010" then
+        micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
+        
       else
         micro_pc <= micro_pc;
       end if;
@@ -701,6 +872,10 @@ end process;
         when others =>
           if FROM_BUS = "0100" then
             alu_res <= data_bus;
+
+          elsif SEQ = "1010" then
+            alu_res <= intr_alu_res;
+        
           else
             alu_res <= alu_res;
           end if;
@@ -709,12 +884,11 @@ end process;
           c_flag <= c_flag;
           z_flag <= z_flag;
       end case;
-
-
-
     end if;
   end process;
 
+
+  
   --ran_gen
   ran_bit <= new_ran(31) xor new_ran(29) xor new_ran(25) xor new_ran(24);
   ran_nr <= new_ran;

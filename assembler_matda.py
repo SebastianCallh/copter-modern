@@ -45,7 +45,7 @@ op_code = {
     'RES' : '34',
     'NOT' : '25',
     'AND' : '27',
-    'OR' : '2B',
+    'OR'  : '2B',
     'XOR' : '2F',
     'ALU' : '35',
     'UPD' : '36',
@@ -53,10 +53,12 @@ op_code = {
     'INC' : '3C',
     'CMP' : '40',
     'DEC' : '43',
+    'BP'  : '47',
+    'RFI' : '49',
 
     'DIE' : 'FF'
     }
-has_one_arg = ['BEQ', 'BNE', 'BN', 'JMP', 'RES', 'INC', 'DEC', 'RAN']
+has_one_arg = ['BEQ', 'BNE', 'BN', 'JMP', 'RES', 'INC', 'DEC', 'RAN', 'BP']
 has_two_args = ['MV', 'ADD', 'SUB', 'NOT', 'OR', 'XOR',  'CMP', 'AND' ]
 prefixes = ['&', '*']
 
@@ -68,6 +70,7 @@ with open(sys.argv[1]) as f:
 line_nr = 0;
 labels = {}
 instructions = ''
+positions = '\n'
 
 lines_cp = copy.deepcopy(lines)
 
@@ -135,7 +138,12 @@ for line in lines:
 
 
 
+for label in labels:
+    positions += label + " : " + str(hex(int(labels[label]))) + "\n"
+
+
 
 f = open('machine_code','w')
-f.write(instructions) 
+f.write(instructions)
+f.write(positions)
 f.close()

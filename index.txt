@@ -62,8 +62,8 @@
 0111	jmp if Z = 0
 	
 1000    jpm if not 32 bit instr
-1001    
-1010    
+1001    jmp if N = 1
+1010    enable interrupts
 1011    
 	
 1100    
@@ -136,4 +136,5 @@ RAN = x"3B"
 INC = x"3C"  (INCREASE TERRAIN HEIGHT)
 CMP = x"40"
 DEC = x"43"  (DECREASE TERRAIN HEIGHT)
+BP  = x"47"
 DIE = ""
