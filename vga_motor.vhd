@@ -54,8 +54,13 @@ architecture Behavioral of VGA_MOTOR is
   signal offset                  : integer := 0;
   signal offset_count            : std_logic_vector(20 downto 0) := (others => '0');
   signal offset_clk              : std_logic;
-  constant OFFSET_UPDATE_LATENCY : integer := 1400000;
+  signal OFFSET_UPDATE_LATENCY : integer := 1400000;
 
+
+  signal coll : std_logic;
+  signal col_count : integer := 0;    -- keeps track of how many cols have updated
+  signal coll_prev : std_logic;
+  signal coll_alert : std_logic;
   
   component pic_mem is
     port ( clk		: in std_logic;
@@ -75,6 +80,8 @@ architecture Behavioral of VGA_MOTOR is
            terrain_change : out std_logic);
   end component;
 begin
+
+  collision <= coll;
   
   PM : pic_mem port map (clk=>clk,
                          we=>'0',
@@ -86,7 +93,7 @@ begin
                          out_pixel=>pixel_from_pic_mem,
                          pixel_x=>Xpixel,
                          pixel_y=>Ypixel,
-                         collision=>collision,
+                         collision=>coll,
                          offset=>offset,
                          gap=>gap,
                          height=>height,
@@ -115,10 +122,11 @@ begin
   begin
     if rising_edge(clk) then
       if offset_count = OFFSET_UPDATE_LATENCY then
-        offset_count <= (others => '0');
+        offset_count <= (others => '0');                        
       else
 	offset_count <= offset_count + 1;
       end if;
+
     end if;
   end process;
 
@@ -131,6 +139,27 @@ begin
     end if;
   end process;
 
+
+
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if coll_alert = '1' and offset_clk = '1' then
+        OFFSET_UPDATE_LATENCY <= 30;                             
+        col_count <= col_count + 1;
+      elsif col_count = 1024 then
+        OFFSET_UPDATE_LATENCY <= 1400000;
+        coll_alert <= '0';
+        col_count <= 0;
+      end if;
+
+      if coll = '1' and coll_prev = '0' then
+        coll_alert <= '1';
+      end if;
+
+      coll_prev <= coll;
+    end if;
+  end process;
   
   -- 25 MHz clock (one system clock pulse width)
   offset_clk <= '1' when (offset_count = OFFSET_UPDATE_LATENCY) else '0';
