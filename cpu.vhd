@@ -8,7 +8,7 @@ use IEEE.NUMERIC_STD.ALL;               -- IEEE library for the unsigned type
 
 
 entity CPU is
-    port ( clk                 : in std_logic;                          -- systen clock
+    port ( clk                 : in std_logic;    -- systen clock
            collision           : in std_logic;
            reset               : in std_logic;
            player_x            : out integer;
@@ -125,11 +125,11 @@ architecture Behavioral of CPU is
   alias OP_CODE : std_logic_vector(7 downto 0) is ir(31 downto 24);
     
   -- Interrupt vectors
-  constant RESET_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00BB";  --220
-  constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00B4"; --230
+  constant RESET_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00CF";  --220
+  constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00C8"; --230
   constant INPUT_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00F0";  --240
   constant NEW_COLUMN_INTERUPT_VECTOR : std_logic_vector(15 downto 0) := x"00FA";  --250
-  constant TERRAIN_CHANGE_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"008C";
+  constant TERRAIN_CHANGE_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00A0";
 
   
   -- Player update frequency
@@ -142,6 +142,7 @@ architecture Behavioral of CPU is
   type ram_t is array (0 to 4096) of std_logic_vector(15 downto 0);
   signal pmem : ram_t := (
 
+
 x"0000",
 x"0000",
 x"0000",
@@ -154,10 +155,6 @@ x"0000",
 x"0000",
 x"0000",
 x"0000",
-x"3420",
-x"0000",
-x"1620",
-x"0001",
 x"3420",
 x"0001",
 x"1620",
@@ -178,14 +175,38 @@ x"3420",
 x"0003",
 x"1620",
 x"0001",
+x"3600",
+x"3420",
+x"0000",
+x"1620",
+x"0001",
+x"3420",
+x"0000",
+x"4020",
+x"0001",
+x"1F20",
+x"0031",
+x"3420",
+x"0002",
+x"1620",
+x"0064",
+x"3320",
+x"0038",
+x"3420",
+x"0002",
+x"1620",
+x"012c",
+x"3600",
+x"3320",
+x"0038",
 x"3420",
 x"0009",
 x"4020",
 x"0001",
 x"1F20",
-x"002c",
+x"0040",
 x"3320",
-x"0024",
+x"0038",
 x"3420",
 x"0009",
 x"1620",
@@ -195,13 +216,13 @@ x"000a",
 x"4020",
 x"0000",
 x"1F20",
-x"0057",
+x"005a",
 x"3420",
 x"000b",
 x"4020",
 x"0000",
 x"1F20",
-x"0046",
+x"006b",
 x"3420",
 x"000a",
 x"1620",
@@ -211,13 +232,13 @@ x"000b",
 x"1620",
 x"0000",
 x"3320",
-x"0024",
+x"0038",
 x"3420",
 x"0002",
 x"4020",
 x"01c2",
 x"4720",
-x"0024",
+x"0038",
 x"3420",
 x"0002",
 x"1760",
@@ -228,13 +249,13 @@ x"1620",
 x"0000",
 x"3600",
 x"3320",
-x"0024",
+x"0038",
 x"3420",
 x"0002",
 x"4020",
 x"0003",
 x"2320",
-x"0024",
+x"0038",
 x"3420",
 x"0002",
 x"1B60",
@@ -245,13 +266,13 @@ x"1620",
 x"0000",
 x"3600",
 x"3320",
-x"0024",
+x"0038",
 x"3420",
 x"0004",
 x"4020",
 x"0001",
 x"1F20",
-x"00c3",
+x"00d7",
 x"3420",
 x"0004",
 x"1B20",
@@ -259,7 +280,7 @@ x"0001",
 x"3600",
 x"4900",
 x"3320",
-x"0024",
+x"0038",
 x"3420",
 x"0006",
 x"1660",
@@ -273,7 +294,7 @@ x"0006",
 x"4020",
 x"003a",
 x"1F20",
-x"00c3",
+x"00d7",
 x"3420",
 x"0004",
 x"1720",
@@ -281,7 +302,7 @@ x"0001",
 x"3600",
 x"4900",
 x"3320",
-x"0024",
+x"0038",
 x"3B20",
 x"0007",
 x"3420",
@@ -293,15 +314,15 @@ x"0007",
 x"4020",
 x"0000",
 x"1F20",
-x"0068",
+x"007c",
 x"3420",
 x"0007",
 x"4020",
 x"0001",
 x"1F20",
-x"0076",
+x"008a",
 x"3320",
-x"00c3",
+x"00d7",
 x"3420",
 x"0000",
 x"1620",
@@ -328,7 +349,7 @@ x"1620",
 x"0001",
 x"4900",
 x"3320",
-x"0024",
+x"0038",
 x"3420",
 x"0000",
 x"1620",
@@ -339,9 +360,13 @@ x"1620",
 x"00c8",
 x"4900",
 x"3320",
-x"0024",
+x"0038",
 x"FF00",
-    others => "0000000000000000");
+
+
+
+
+others => "0000000000000000");
 
   -- micro-MEM (Max is 255 for 8 bit addresses)
   type micro_mem_t is array (0 to 255) of std_logic_vector(23 downto 0);
@@ -387,13 +412,13 @@ x"FF00",
     "001000000010000000000000",  --             alu_res -= asr
     "010011000000001100000000",  --             pmem(res) <= alu_res
     
-    "000000000000011100000000",  -- 1F:beq      if z = 0: u_pc <= 0 
+    "000000000000010100000000",  -- 1F:beq      if z = 0: u_pc <= 0 
     "001000010000001100000000",  --             PC <= asr
     
-    "000000000000010100000000",  -- 21:bne      if z = 1: u_pc <= 0
+    "000000000000011100000000",  -- 21:bne      if z = 1: u_pc <= 0
     "001000010000001100000000",  --             PC <= asr
     
-    "000000000000011000000000",  -- 23:bn       if n = 0: u_pc <= 0 
+    "000000000000100100000000",  -- 23:bn       if n = 0: u_pc <= 0 
     "001000010000001100000000",  --             PC <= asr
           
     "001000000011000000000000",  -- 25:not      alu_res <= not asr
@@ -438,7 +463,7 @@ x"FF00",
     "001000000001000000000000",  --             alu_res <= alu_res + asr
     "010010110000001100000000",  --             height <= alu_res
 
-    "000000000000100100000000",  -- 47:bp       if n = 1: u_pc <= 0 
+    "000000000000011000000000",  -- 47:bp       if n = 1: u_pc <= 0 
     "001000010000001100000000",  --             PC <= asr
 
 
@@ -528,7 +553,6 @@ begin  -- Behavioral
       end if;
 
       
-      
       if terrain_change = '1' and terrain_prev = '0' then
           terrain_alert <= '1';
       end if;
@@ -568,6 +592,10 @@ begin  -- Behavioral
       elsif TO_BUS = "1100" then
         pmem_res <= pmem(to_integer(unsigned(res)));
 
+      elsif player_upd_alert = '1' then
+        player_upd_alert <= '0';
+        pmem(to_integer(unsigned(player_upd))) <= ONE;
+        
       elsif release_alert = '1' then
         release_alert <= '0';
         pmem(to_integer(unsigned(release_pos))) <= ONE;
@@ -576,9 +604,6 @@ begin  -- Behavioral
         press_alert <= '0';
         pmem(to_integer(unsigned(press_pos))) <= ONE;
         
-      elsif player_upd_alert = '1' then
-        player_upd_alert <= '0';
-        pmem(to_integer(unsigned(player_upd))) <= ONE;
       end if;
      
 
@@ -590,11 +615,11 @@ begin  -- Behavioral
       end if;
       
 
-      if input = '0' and input_prev = '1' then
+      if input = '1' and input_prev = '0' then
         press_alert <= '1';
       end if;
 
-      if input = '1' and input_prev = '0' then
+      if input = '0' and input_prev = '1' then
         release_alert <= '1';
       end if;
       input_prev <= input;
@@ -709,22 +734,22 @@ begin  -- Behavioral
       elsif SEQ = "0100"  then -- jmp
         micro_pc <= MICRO_ADR;
         
-      elsif SEQ = "0101"  then --jmp if Z = 1
+      elsif SEQ = "0101"  then --jmp if Z = 1     --BEQ--
         if z_flag = '0' then
           micro_pc <= MICRO_ADR;
         else
           micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
         end if;
 
-      elsif SEQ = "0110"  then --jmp if N = 0
-        if n_flag = '0' then
+      elsif SEQ = "0110"  then --jmp if N = 0     --BP--
+        if n_flag = '1' then
           micro_pc <= MICRO_ADR;
         else
           micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
         end if;
 
-      elsif SEQ = "0111"  then --jmp if Z = 0
-        if z_flag = '0' then
+      elsif SEQ = "0111"  then --jmp if Z = 0      --BNE--
+        if z_flag = '1' then
           micro_pc <= MICRO_ADR;
         else
           micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
@@ -737,8 +762,8 @@ begin  -- Behavioral
           micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
         end if;
 
-      elsif SEQ = "1001"  then --jmp if N = 1
-        if n_flag = '1' then
+      elsif SEQ = "1001"  then --jmp if N = 1      --BN--
+        if n_flag = '0' then
           micro_pc <= MICRO_ADR;
         else
           micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);

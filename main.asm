@@ -10,20 +10,28 @@ RAND2
 P_UPD
 PRESS
 RELEASE
-START	MV 1 RUNNING    "starting sequence"
-	MV 150 P_X
+START	MV 150 P_X
 	MV 200 P_Y
 	MV 15 HEIGHT
 	MV 30 GAP
 	MV 1 P_DY
+	UPD
+TEST	MV 1 RUNNING
+	CMP 1 RUNNING
+	BEQ PLUP
+	MV 100 P_Y
+	JMP GAME_L
+PLUP	MV 300 P_Y
+INF	UPD
+	JMP GAME_L
 GAME_L	CMP 1 P_UPD    "check if player pos should update"
 	BEQ UP_OR_D     "if yes, jump to up_or_d"
 	JMP GAME_L     "else, back to gameloop"
 UP_OR_D	MV 0 P_UPD
 	CMP 0 PRESS
-	BEQ P_UP
-	CMP 0 RELEASE
 	BEQ P_DOWN
+	CMP 0 RELEASE
+	BEQ P_UP
 	MV 0 PRESS
 	MV 0 RELEASE
 	JMP GAME_L
