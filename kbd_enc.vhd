@@ -93,9 +93,9 @@ begin
   
   ScanCode <= PS2Data_sr(8 downto 1);
 
-  with ScanCode select
-    input <= '1' when x"29",	-- space
-             '0' when others;
+  --with ScanCode select
+  --  input <= '1' when x"29",	-- space
+  --           '0' when others;
 
   
   
@@ -144,11 +144,19 @@ end process;
         if BC11 = '1' and ScanCode /= "11110000" then
           PS2State <= MAKE;
         end if;
-        if BC11 = '1' and Scancode = "11110000" then
+        if BC11 = '1' and ScanCode = "11110000" then
           PS2State <= BREAK;
         end if;
       end if;
 
+      if ScanCode = x"29" then
+        if PS2State = MAKE then
+          input <= '1';
+        elsif PS2State = BREAK then
+          input <= '0';
+        end if;
+      end if;
+      
       if  PS2State = MAKE then
         PS2State <= IDLE;
       end if;
