@@ -125,7 +125,7 @@ architecture Behavioral of CPU is
   alias OP_CODE : std_logic_vector(7 downto 0) is ir(31 downto 24);
     
   -- Interrupt vectors
-  constant RESET_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00CF";  --220
+  constant RESET_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00F5";  --220
   constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00C8"; --230
   constant INPUT_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00F0";  --240
   constant NEW_COLUMN_INTERUPT_VECTOR : std_logic_vector(15 downto 0) := x"00FA";  --250
@@ -141,8 +141,6 @@ architecture Behavioral of CPU is
   -- PMEM (Max is 65535 for 16 bit addresses)
   type ram_t is array (0 to 4096) of std_logic_vector(15 downto 0);
   signal pmem : ram_t := (
-
-
 x"0000",
 x"0000",
 x"0000",
@@ -272,7 +270,7 @@ x"0004",
 x"4020",
 x"0001",
 x"1F20",
-x"00d7",
+x"00fd",
 x"3420",
 x"0004",
 x"1B20",
@@ -294,7 +292,7 @@ x"0006",
 x"4020",
 x"003a",
 x"1F20",
-x"00d7",
+x"00fd",
 x"3420",
 x"0004",
 x"1720",
@@ -322,7 +320,7 @@ x"0001",
 x"1F20",
 x"008a",
 x"3320",
-x"00d7",
+x"00fd",
 x"3420",
 x"0000",
 x"1620",
@@ -347,6 +345,44 @@ x"3420",
 x"0000",
 x"1620",
 x"0001",
+x"3420",
+x"0004",
+x"1620",
+x"0001",
+x"3420",
+x"0005",
+x"1620",
+x"0041",
+x"3600",
+x"3420",
+x"0007",
+x"1620",
+x"ffff",
+x"3420",
+x"0007",
+x"4020",
+x"0000",
+x"1F20",
+x"00e5",
+x"3420",
+x"0007",
+x"1B20",
+x"0001",
+x"3320",
+x"00d9",
+x"3420",
+x"0005",
+x"1620",
+x"001e",
+x"3420",
+x"0004",
+x"1620",
+x"000f",
+x"3420",
+x"0002",
+x"1620",
+x"00c8",
+x"3600",
 x"4900",
 x"3320",
 x"0038",
@@ -362,10 +398,6 @@ x"4900",
 x"3320",
 x"0038",
 x"FF00",
-
-
-
-
 others => "0000000000000000");
 
   -- micro-MEM (Max is 255 for 8 bit addresses)
