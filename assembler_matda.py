@@ -26,6 +26,9 @@ def to_bin(n, s):
 def make_instr(i):
     return 'x\"' + str(i) + '",\n'
 
+def negative(n):
+    return str(int('FFFF', 16) + int(n) + 1)
+
 FETCH_NEXT = '100000'
 DONT_FETCH_NEXT = '00'
 NO_ARGS = '0000'
@@ -119,7 +122,10 @@ for line in lines:
         mods = ['10' if arg[0] is '*' else 
                 '01' if arg[0] is '&' else 
                 '00' for arg in args]
-
+        
+    #Handle negative integers
+    args = [negative(arg) if arg[0] is '-' else arg for arg in args]
+        
     #remove prefixes
     args = [arg[1:] if arg[0] in prefixes else arg for arg in args]
 
