@@ -10,6 +10,8 @@ RAND2
 P_UPD
 PRESS
 RELEASE
+PROGRESS
+P_CNT
 START	MV 150 P_X
 	MV 200 P_Y
 	MV 15 HEIGHT
@@ -37,13 +39,21 @@ UP_OR_D	MV 0 P_UPD
 	JMP GAME_L
 P_DOWN	CMP 450 P_Y    "check if player can be moved down"
 	BP GAME_L      "if not, jump back to gameloop"
-	ADD &P_DY P_Y  "else add the value on P_DY to P_Y"
-	MV 0 P_UPD     "reset player update"
+	CMP 5 P_DY
+	BN 43
+	JMP 44
+43	ADD 1 P_DY
+44	ADD &P_DY P_Y 
+	MV 0 P_UPD
 	UPD
-	JMP GAME_L     "jump back to gameloop"
+	JMP GAME_L
 P_UP	CMP 3 P_Y
 	BN GAME_L
-	SUB &P_DY P_Y
+	CMP -5 P_DY
+	BP 53
+	JMP 54
+53	SUB 1 P_DY
+54	ADD &P_DY P_Y
 	MV 0 P_UPD
 	UPD
 	JMP GAME_L
