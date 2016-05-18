@@ -109,10 +109,10 @@ architecture Behavioral of CPU is
   signal player_upd : std_logic_vector(15 downto 0) := x"0009";
   signal press_pos : std_logic_vector(15 downto 0) := x"000A";
   signal release_pos : std_logic_vector(15 downto 0) := x"000B";
-  signal speed_pos : std_logic_vector(15 downto 0) := x"0000";  --FILL THIS IN
-  signal speed_internal : integer;
+  signal speed_pos : std_logic_vector(15 downto 0) := x"000E";
+  signal speed_internal : integer := 1000;
 
-  
+  signal player_speed : integer;
 
   signal progress : unsigned(15 downto 0) := (others => '0');
   
@@ -129,11 +129,11 @@ architecture Behavioral of CPU is
 
 
   -- Interrupt vectors
-  constant RESET_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00DB";  --220
-  constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00DB"; --230
+  constant RESET_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00e1";  --220
+  constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00e1"; --230
   constant INPUT_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00F0";  --240
   constant NEW_COLUMN_INTERUPT_VECTOR : std_logic_vector(15 downto 0) := x"00FA";  --250
-  constant TERRAIN_CHANGE_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00b3";
+  constant TERRAIN_CHANGE_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00b9";
 
   
   -- Player update frequency
@@ -145,6 +145,8 @@ architecture Behavioral of CPU is
   -- PMEM (Max is 65535 for 16 bit addresses)
   type ram_t is array (0 to 4096) of std_logic_vector(15 downto 0);
   signal pmem : ram_t := (
+
+x"0000",
 x"0000",
 x"0000",
 x"0000",
@@ -166,7 +168,7 @@ x"0096",
 x"3420",
 x"0002",
 x"1620",
-x"00c8",
+x"0032",
 x"3420",
 x"0004",
 x"1620",
@@ -184,13 +186,18 @@ x"000d",
 x"1620",
 x"0000",
 x"3420",
+x"000e",
+x"1620",
+x"01f4",
+x"4300",
+x"3420",
 x"0009",
 x"3620",
 x"0001",
 x"1F20",
-x"002e",
+x"0034",
 x"3320",
-x"0026",
+x"002c",
 x"3420",
 x"0009",
 x"1620",
@@ -200,13 +207,13 @@ x"000a",
 x"3620",
 x"0000",
 x"1F20",
-x"0048",
+x"004e",
 x"3420",
 x"000b",
 x"3620",
 x"0000",
 x"1F20",
-x"0064",
+x"006a",
 x"3420",
 x"000a",
 x"1620",
@@ -216,19 +223,19 @@ x"000b",
 x"1620",
 x"0000",
 x"3320",
-x"0026",
+x"002c",
 x"3420",
 x"0002",
 x"3620",
 x"01c2",
 x"3920",
-x"0026",
+x"002c",
 x"3420",
 x"000d",
 x"3620",
 x"0005",
 x"2120",
-x"0080",
+x"0086",
 x"3420",
 x"000d",
 x"1620",
@@ -238,25 +245,25 @@ x"0003",
 x"3620",
 x"0003",
 x"1F20",
-x"0080",
+x"0086",
 x"3420",
 x"0003",
 x"1720",
 x"0001",
 x"3320",
-x"0080",
+x"0086",
 x"3420",
 x"0002",
 x"3620",
 x"0003",
 x"2320",
-x"0026",
+x"002c",
 x"3420",
 x"000d",
 x"3620",
 x"0005",
 x"2120",
-x"0080",
+x"0086",
 x"3420",
 x"000d",
 x"1620",
@@ -266,13 +273,13 @@ x"0003",
 x"3620",
 x"fffd",
 x"1F20",
-x"0080",
+x"0086",
 x"3420",
 x"0003",
 x"1B20",
 x"0001",
 x"3320",
-x"0080",
+x"0086",
 x"3420",
 x"000d",
 x"1720",
@@ -287,13 +294,13 @@ x"1620",
 x"0000",
 x"4300",
 x"3320",
-x"0026",
+x"002c",
 x"3420",
 x"0004",
 x"3620",
 x"0001",
 x"1F20",
-x"0110",
+x"0116",
 x"3420",
 x"0004",
 x"1B20",
@@ -301,7 +308,7 @@ x"0001",
 x"4300",
 x"3B00",
 x"3320",
-x"0026",
+x"002c",
 x"3420",
 x"0006",
 x"1660",
@@ -315,7 +322,7 @@ x"0006",
 x"3620",
 x"003a",
 x"1F20",
-x"0110",
+x"0116",
 x"3420",
 x"0004",
 x"1720",
@@ -323,7 +330,7 @@ x"0001",
 x"4300",
 x"3B00",
 x"3320",
-x"0026",
+x"002c",
 x"3520",
 x"0007",
 x"3420",
@@ -335,15 +342,15 @@ x"0007",
 x"3620",
 x"0000",
 x"1F20",
-x"008f",
+x"0095",
 x"3420",
 x"0007",
 x"3620",
 x"0001",
 x"1F20",
-x"009d",
+x"00a3",
 x"3320",
-x"0110",
+x"0116",
 x"3420",
 x"0000",
 x"1620",
@@ -386,13 +393,13 @@ x"0007",
 x"3620",
 x"0000",
 x"1F20",
-x"00f8",
+x"00fe",
 x"3420",
 x"0007",
 x"1B20",
 x"0001",
 x"3320",
-x"00ec",
+x"00f2",
 x"3420",
 x"0005",
 x"1620",
@@ -408,7 +415,7 @@ x"00c8",
 x"4300",
 x"3B00",
 x"3320",
-x"0026",
+x"002c",
 x"3420",
 x"0000",
 x"1620",
@@ -419,9 +426,8 @@ x"1620",
 x"00c8",
 x"3B00",
 x"3320",
-x"0026",
+x"002c",
 x"FF00",
-
 
 others => "0000000000000000");
 
@@ -666,7 +672,7 @@ begin  -- Behavioral
       end if;
      
 
-      if player_upd_counter = PLAYER_UPDATE_LATENCY then
+      if player_upd_counter >= player_speed then
         player_upd_alert <= '1';
         player_upd_counter <= 0;
         progress <= progress + 1;
@@ -687,6 +693,7 @@ begin  -- Behavioral
     end if;
   end process;
 
+  player_speed <= (speed_internal*1000) + ((1000-speed_internal)*750);
   
   -- res
   process(clk)

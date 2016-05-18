@@ -12,12 +12,15 @@ PRESS
 RELEASE
 PROGRESS
 P_CNT
-START	MV 10 P_X
-	MV 200 P_Y
+SPEED
+START	MV 150 P_X
+	MV 50 P_Y
 	MV 15 HEIGHT
 	MV 30 GAP
 	MV 1 P_DY
 	MV 0 P_CNT
+	MV 500 SPEED
+	UPD
 GAME_L	CMP 1 P_UPD    "check if player pos should update"
 	BEQ UP_OR_D     "if yes, jump to up_or_d"
 	JMP GAME_L     "else, back to gameloop"
