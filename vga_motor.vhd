@@ -61,6 +61,8 @@ architecture Behavioral of VGA_MOTOR is
   signal col_count : integer := 0;    -- keeps track of how many cols have updated
   signal coll_prev : std_logic;
   signal coll_alert : std_logic;
+  signal rst_prev : std_logic;
+  signal rst_alert : std_logic;
   
   component pic_mem is
     port ( clk		: in std_logic;
@@ -144,19 +146,24 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
-      if coll_alert = '1' and offset_clk = '1' then
+      if (rst_alert = '1' or coll_alert = '1') and offset_clk = '1' then
         OFFSET_UPDATE_LATENCY <= 30;                             
         col_count <= col_count + 1;
       elsif col_count = 1024 then
         OFFSET_UPDATE_LATENCY <= 1400000;
         coll_alert <= '0';
+        rst_alert <= '0';
         col_count <= 0;
       end if;
 
+      if rst = '1' and rst_prev = '0' then
+        rst_alert <= '1';
+      end if;
       if coll = '1' and coll_prev = '0' then
         coll_alert <= '1';
       end if;
 
+      rst_prev <= rst;
       coll_prev <= coll;
     end if;
   end process;
