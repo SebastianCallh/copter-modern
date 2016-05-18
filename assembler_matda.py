@@ -50,18 +50,16 @@ op_code = {
     'AND' : '27',
     'OR'  : '2B',
     'XOR' : '2F',
-    'ALU' : '35',
-    'UPD' : '36',
-    'RAN' : '3B',
-    'INC' : '3C',
-    'CMP' : '40',
-    'DEC' : '43',
-    'BP'  : '47',
-    'RFI' : '49',
-
+    'RAN' : '35',
+    'CMP' : '36',
+    'BP'  : '39',
+    'RFI' : '3B',
+    'PCMP': '3E',
+    'PMOD': '41',
+    'UPD' : '44',
     'DIE' : 'FF'
     }
-has_one_arg = ['BEQ', 'BNE', 'BN', 'JMP', 'RES', 'INC', 'DEC', 'RAN', 'BP']
+has_one_arg = ['BEQ', 'BNE', 'BN', 'JMP', 'RES', 'RAN', 'BP']
 has_two_args = ['MV', 'ADD', 'SUB', 'NOT', 'OR', 'XOR',  'CMP', 'AND' ]
 prefixes = ['&', '*']
 
@@ -74,6 +72,7 @@ line_nr = 0;
 labels = {}
 instructions = ''
 positions = '\n'
+imp_pos = ['TERR', 'RESET', 'COLL']
 
 lines_cp = copy.deepcopy(lines)
 
@@ -145,7 +144,8 @@ for line in lines:
 
 
 for label in labels:
-    positions += label + " : " + str(hex(int(labels[label]))) + "\n"
+    if label in imp_pos:
+        positions += label + " : " + str(hex(int(labels[label]))) + "\n"
 
 
 

@@ -31,7 +31,7 @@
 	
 1100    PMEM(RES)*
 1101    RAN_NR
-1110	
+1110	PROGRESS
 1111	
 
 * = requires fetching (due to reading from memory)
@@ -47,7 +47,7 @@
 100    AND
 101    OR
 110    XOR
-111    
+111    MOD   
 
 ------ SEQ ------
 
@@ -64,7 +64,7 @@
 1000    jpm if not 32 bit instr
 1001    jmp if N = 1
 1010    enable interrupts
-1011    
+1011    jmp if progress <=
 	
 1100    
 1101    
@@ -130,11 +130,11 @@ OR  = x"2B"
 XOR = x"2F"
 JMP = x"33"
 RES = x"34"  (LOAD RES)
-ALU = x"35"  (LOAD ALU_RES)
-UPD = x"36"  (UPDATE POS)
-RAN = x"3B"  
-INC = x"3C"  (INCREASE TERRAIN HEIGHT)
-CMP = x"40"
-DEC = x"43"  (DECREASE TERRAIN HEIGHT)
-BP  = x"47"
+RAN = x"35"  
+CMP = x"36"
+BP  = x"39"
+RFI = x"3B"
+PCMP= x"3E"
+PMOD= x"41"
+UPD = x"44"  (UPDATE POS)
 DIE = ""
