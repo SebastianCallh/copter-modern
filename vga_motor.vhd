@@ -28,7 +28,8 @@ entity VGA_MOTOR is
          new_column             : out std_logic;
          gap                    : in integer;
          height                 : in integer;
-         terrain_change         : out std_logic);
+         terrain_change         : out std_logic;
+         speed                  : in integer);
   
 end VGA_MOTOR;
 
@@ -54,7 +55,8 @@ architecture Behavioral of VGA_MOTOR is
   signal offset                  : integer := 0;
   signal offset_count            : std_logic_vector(20 downto 0) := (others => '0');
   signal offset_clk              : std_logic;
-  signal OFFSET_UPDATE_LATENCY : integer := 1400000;
+  signal OFFSET_UPDATE_LATENCY   : integer;
+  signal offset_enable           : std_logic := '1';
 
 
   signal coll : std_logic;
@@ -147,13 +149,18 @@ begin
   begin
     if rising_edge(clk) then
       if (rst_alert = '1' or coll_alert = '1') and offset_clk = '1' then
+        offset_enable <= '0';
         OFFSET_UPDATE_LATENCY <= 30;                             
         col_count <= col_count + 1;
       elsif col_count = 1024 then
-        OFFSET_UPDATE_LATENCY <= 1400000;
+        offset_enable <= '1';
+        OFFSET_UPDATE_LATENCY <= speed*1000;
         coll_alert <= '0';
         rst_alert <= '0';
         col_count <= 0;
+
+      elsif offset_enable = '1' then
+        OFFSET_UPDATE_LATENCY <= speed*1000;  
       end if;
 
       if rst = '1' and rst_prev = '0' then

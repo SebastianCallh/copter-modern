@@ -13,8 +13,9 @@ RAND2
 P_UPD
 PRESS
 RELEASE
-PROGRESS
+PRG
 P_CNT
+SPD
 START	MV COLL COL_I  "Setting up interupts"
 	MV TERR TER_I
 	MV RESER RES_I
@@ -24,15 +25,8 @@ START	MV COLL COL_I  "Setting up interupts"
 	MV 30 GAP
 	MV 1 P_DY
 	MV 0 P_CNT
+	MV 500 SPD
 	UPD
-TEST	MV 1 RUNNING
-	CMP 1 RUNNING
-	BEQ PLUP
-	MV 100 P_Y
-	JMP GAME_L
-PLUP	MV 300 P_Y
-INF	UPD
-	JMP GAME_L
 GAME_L	CMP 1 P_UPD    "check if player pos should update"
 	BEQ UP_OR_D     "if yes, jump to up_or_d"
 	JMP GAME_L     "else, back to gameloop"
@@ -104,7 +98,7 @@ COMP	CMP 0 RAND1
 	JMP COMP
 RET	MV 30 GAP
 	MV 15 HEIGHT
-	MV 200 P_Y
+	MV 20 P_Y
 	UPD
 	RFI
 	JMP GAME_L

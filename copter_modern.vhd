@@ -49,7 +49,8 @@ architecture Behavioral of copter_modern is
            new_column           : out std_logic;
            gap                  : in integer;
            height               : in integer;
-           terrain_change       : out std_logic);    
+           terrain_change       : out std_logic;
+           speed                : in integer);    
   end component;
 
 
@@ -64,7 +65,8 @@ architecture Behavioral of copter_modern is
            new_column          : in std_logic;
            gap                 : out integer;
            height              : out integer;
-           terrain_change      : in std_logic);
+           terrain_change      : in std_logic;
+           speed               : out integer);
     
   end component;
 	
@@ -90,6 +92,7 @@ architecture Behavioral of copter_modern is
   signal        gap_s           : integer;
   signal        height_s        : integer;
   signal        terrain_change_s : std_logic;
+  signal        speed_s         : integer;
   
 begin
 
@@ -116,7 +119,8 @@ begin
                           new_column=>new_column,
                           gap=>gap_s,
                           height=>height_s,
-                          terrain_change=>terrain_change_s);
+                          terrain_change=>terrain_change_s,
+                          speed=>speed_s);
 
   -- CPU connector
   CP : CPU port map(clk=>clk,
@@ -128,7 +132,8 @@ begin
                     new_column=>new_column,
                     gap=>gap_s,
                     height=>height_s,
-                    terrain_change=>terrain_change_s);
+                    terrain_change=>terrain_change_s,
+                    speed=>speed_s);
   
 end Behavioral;
 

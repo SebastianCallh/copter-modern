@@ -15,9 +15,10 @@ entity CPU is
            player_y            : out integer;
            input               : in std_logic;
            new_column          : in std_logic;
-           gap                 : out integer;
-           height              : out integer;
-           terrain_change      : in std_logic);   
+           gap                 : out integer := 60;
+           height              : out integer := 0;
+           terrain_change      : in std_logic;
+           speed               : out integer);
     
  
 end CPU;
@@ -27,7 +28,7 @@ architecture Behavioral of CPU is
 
   -- Signals
   signal data_bus : std_logic_vector(15 downto 0);
-  signal pc : std_logic_vector(15 downto 0) := x"000C";
+  signal pc : std_logic_vector(15 downto 0) := x"000D";
   signal asr : std_logic_vector(15 downto 0);
   signal alu_input : signed(15 downto 0);
   signal alu_res : std_logic_vector(15 downto 0);
@@ -42,14 +43,6 @@ architecture Behavioral of CPU is
   signal reg3 : std_logic_vector(15 downto 0);
   signal reg4 : std_logic_vector(15 downto 0);
 
-  -- Pixels
-  signal player_x_internal : integer;
-  signal player_y_internal : integer;
-
-  
-  -- Terrain signals
-  signal gap_internal : integer := 60;
-  signal height_internal : integer := 0;
   
   -- Micro
   signal micro_instr : std_logic_vector(23 downto 0);
@@ -89,6 +82,9 @@ architecture Behavioral of CPU is
   signal alu_and : std_logic_vector(15 downto 0);
   signal alu_or : std_logic_vector(15 downto 0);
   signal alu_xor : std_logic_vector(15 downto 0);
+  signal alu_mod : std_logic_vector(15 downto 0);
+
+  signal alu_int : integer;
 
   --ran_gen signals
   signal ran_nr : std_logic_vector(31 downto 0) := (others => '0');
@@ -109,9 +105,16 @@ architecture Behavioral of CPU is
   signal y_pos : std_logic_vector(15 downto 0) := x"0002";
   signal height_pos : std_logic_vector(15 downto 0) := x"0004";
   signal gap_pos : std_logic_vector(15 downto 0) := x"0005";
+
+  signal player_upd : std_logic_vector(15 downto 0) := x"0009";
   signal press_pos : std_logic_vector(15 downto 0) := x"000A";
   signal release_pos : std_logic_vector(15 downto 0) := x"000B";
-  signal player_upd : std_logic_vector(15 downto 0) := x"0009";
+  signal speed_pos : std_logic_vector(15 downto 0) := x"000E";
+  signal speed_internal : integer := 1000;
+
+  signal player_speed : integer;
+
+  signal progress : unsigned(15 downto 0) := (others => '0');
   
   -- Alias
   alias TO_BUS : std_logic_vector(3 downto 0) is micro_instr(23 downto 20);     -- to bus
@@ -123,13 +126,14 @@ architecture Behavioral of CPU is
 
   alias FETCH_NEXT : std_logic is ir(21);
   alias OP_CODE : std_logic_vector(7 downto 0) is ir(31 downto 24);
-    
+
+
   -- Interrupt vectors
-  constant RESET_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00F5";  --220
-  constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00C8"; --230
+  constant RESET_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00e1";  --220
+  constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00e1"; --230
   constant INPUT_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00F0";  --240
   constant NEW_COLUMN_INTERUPT_VECTOR : std_logic_vector(15 downto 0) := x"00FA";  --250
-  constant TERRAIN_CHANGE_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00A0";
+  constant TERRAIN_CHANGE_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00b9";
 
   
   -- Player update frequency
@@ -141,6 +145,10 @@ architecture Behavioral of CPU is
   -- PMEM (Max is 65535 for 16 bit addresses)
   type ram_t is array (0 to 4096) of std_logic_vector(15 downto 0);
   signal pmem : ram_t := (
+
+x"0000",
+x"0000",
+x"0000",
 x"0000",
 x"0000",
 x"0000",
@@ -160,7 +168,7 @@ x"0096",
 x"3420",
 x"0002",
 x"1620",
-x"00c8",
+x"0032",
 x"3420",
 x"0004",
 x"1620",
@@ -173,54 +181,39 @@ x"3420",
 x"0003",
 x"1620",
 x"0001",
-x"3600",
 x"3420",
+x"000d",
+x"1620",
 x"0000",
-x"1620",
-x"0001",
 x"3420",
-x"0000",
-x"4020",
-x"0001",
-x"1F20",
-x"0031",
-x"3420",
-x"0002",
+x"000e",
 x"1620",
-x"0064",
-x"3320",
-x"0038",
-x"3420",
-x"0002",
-x"1620",
-x"012c",
-x"3600",
-x"3320",
-x"0038",
+x"01f4",
+x"4300",
 x"3420",
 x"0009",
-x"4020",
+x"3620",
 x"0001",
 x"1F20",
-x"0040",
+x"0034",
 x"3320",
-x"0038",
+x"002c",
 x"3420",
 x"0009",
 x"1620",
 x"0000",
 x"3420",
 x"000a",
-x"4020",
+x"3620",
 x"0000",
 x"1F20",
-x"005a",
+x"004e",
 x"3420",
 x"000b",
-x"4020",
+x"3620",
 x"0000",
 x"1F20",
-x"006b",
+x"006a",
 x"3420",
 x"000a",
 x"1620",
@@ -230,13 +223,67 @@ x"000b",
 x"1620",
 x"0000",
 x"3320",
-x"0038",
+x"002c",
 x"3420",
 x"0002",
-x"4020",
+x"3620",
 x"01c2",
-x"4720",
-x"0038",
+x"3920",
+x"002c",
+x"3420",
+x"000d",
+x"3620",
+x"0005",
+x"2120",
+x"0086",
+x"3420",
+x"000d",
+x"1620",
+x"0000",
+x"3420",
+x"0003",
+x"3620",
+x"0003",
+x"1F20",
+x"0086",
+x"3420",
+x"0003",
+x"1720",
+x"0001",
+x"3320",
+x"0086",
+x"3420",
+x"0002",
+x"3620",
+x"0003",
+x"2320",
+x"002c",
+x"3420",
+x"000d",
+x"3620",
+x"0005",
+x"2120",
+x"0086",
+x"3420",
+x"000d",
+x"1620",
+x"0000",
+x"3420",
+x"0003",
+x"3620",
+x"fffd",
+x"1F20",
+x"0086",
+x"3420",
+x"0003",
+x"1B20",
+x"0001",
+x"3320",
+x"0086",
+x"3420",
+x"000d",
+x"1720",
+x"0001",
 x"3420",
 x"0002",
 x"1760",
@@ -245,40 +292,23 @@ x"3420",
 x"0009",
 x"1620",
 x"0000",
-x"3600",
+x"4300",
 x"3320",
-x"0038",
-x"3420",
-x"0002",
-x"4020",
-x"0003",
-x"2320",
-x"0038",
-x"3420",
-x"0002",
-x"1B60",
-x"0003",
-x"3420",
-x"0009",
-x"1620",
-x"0000",
-x"3600",
-x"3320",
-x"0038",
+x"002c",
 x"3420",
 x"0004",
-x"4020",
+x"3620",
 x"0001",
 x"1F20",
-x"00fd",
+x"0116",
 x"3420",
 x"0004",
 x"1B20",
 x"0001",
-x"3600",
-x"4900",
+x"4300",
+x"3B00",
 x"3320",
-x"0038",
+x"002c",
 x"3420",
 x"0006",
 x"1660",
@@ -289,19 +319,19 @@ x"1760",
 x"0005",
 x"3420",
 x"0006",
-x"4020",
+x"3620",
 x"003a",
 x"1F20",
-x"00fd",
+x"0116",
 x"3420",
 x"0004",
 x"1720",
 x"0001",
-x"3600",
-x"4900",
+x"4300",
+x"3B00",
 x"3320",
-x"0038",
-x"3B20",
+x"002c",
+x"3520",
 x"0007",
 x"3420",
 x"0007",
@@ -309,18 +339,18 @@ x"2720",
 x"0003",
 x"3420",
 x"0007",
-x"4020",
+x"3620",
 x"0000",
 x"1F20",
-x"007c",
+x"0095",
 x"3420",
 x"0007",
-x"4020",
+x"3620",
 x"0001",
 x"1F20",
-x"008a",
+x"00a3",
 x"3320",
-x"00fd",
+x"0116",
 x"3420",
 x"0000",
 x"1620",
@@ -348,28 +378,28 @@ x"0001",
 x"3420",
 x"0004",
 x"1620",
-x"0001",
+x"0000",
 x"3420",
 x"0005",
 x"1620",
 x"0041",
-x"3600",
+x"4300",
 x"3420",
 x"0007",
 x"1620",
 x"ffff",
 x"3420",
 x"0007",
-x"4020",
+x"3620",
 x"0000",
 x"1F20",
-x"00e5",
+x"00fe",
 x"3420",
 x"0007",
 x"1B20",
 x"0001",
 x"3320",
-x"00d9",
+x"00f2",
 x"3420",
 x"0005",
 x"1620",
@@ -382,10 +412,10 @@ x"3420",
 x"0002",
 x"1620",
 x"00c8",
-x"3600",
-x"4900",
+x"4300",
+x"3B00",
 x"3320",
-x"0038",
+x"002c",
 x"3420",
 x"0000",
 x"1620",
@@ -394,10 +424,11 @@ x"3420",
 x"0002",
 x"1620",
 x"00c8",
-x"4900",
+x"3B00",
 x"3320",
-x"0038",
+x"002c",
 x"FF00",
+
 others => "0000000000000000");
 
   -- micro-MEM (Max is 255 for 8 bit addresses)
@@ -473,39 +504,43 @@ others => "0000000000000000");
    
     "001000010000001100000000",  -- 33:jmp      PC <= asr
     "001001010000001100000000",  -- 34:res      res <= asr  (load res)
-    "001001000000001100000000",  -- 35:alu      alu_res <= asr (load alu_res)
-    "000000000000000000000001",  -- 36:upd      player_x_internal <= pmem(x_pos)
-    "000000000000000000000010",  --             player_y_internal <= pmem(y_pos)
-    "000000000000000000000011",  --             height <= pmem(height_pos)
-    "000000000000000000000100",  --             gap <= pmem(gap_pos)
-    "000000000000001100000000",  --             micro_pc <= 0
-    "110100110000001100000000",  -- 3B:ran      pmem(asr) <= rand_nr
 
-    "101100000000000000000000",  -- 3C:inc      fetch HEIGHT
-    "101101000000000000000000",  --             alu_res <= height
-    "001000000010000000000000",  --             alu_res <= alu_res - asr
-    "010010110000001100000000",  --             height <= alu_res
+    "110100110000001100000000",  -- 35:ran      pmem(asr) <= rand_nr
 
-    "110000000000000000000000",  -- 40:cmp      fetch pmem(res)  
+    "110000000000000000000000",  -- 36:cmp      fetch pmem(res)  
     "110001000000000000000000",  --             alu_res <= pmem(res)         
     "001000000010001100000000",  --             alu_res <= alu_res - asr
-    
-    "101100000000000000000000",  -- 43:dec      fetch HEIGHT
-    "101101000000000000000000",  --             alu_res <= height
-    "001000000001000000000000",  --             alu_res <= alu_res + asr
-    "010010110000001100000000",  --             height <= alu_res
 
-    "000000000000011000000000",  -- 47:bp       if n = 1: u_pc <= 0 
+    "000000000000011000000000",  -- 39:bp       if n = 1: u_pc <= 0 
     "001000010000001100000000",  --             PC <= asr
 
 
-    "000000000000101000000000",  -- 49:rfi      (return from interrupt)         
+    "000000000000101000000000",  -- 3B:rfi      (return from interrupt)         
     "000000000000001100000000",  --             micro_pc <= 0
+    
+    "111000000000000000000000",  -- 3D:pcmp     fetch progress
+    "111001000000000000000000",  --             alu_res <= progress
+    "001000000010001100000000",  --             alu_res <= alu_res - asr
+
+    "111000000000000000000000",  -- 40:pmod     fetch progress
+    "111001000000000000000000",  --             alu_res <= progress 
+    "110000000111001100000000",  --             alu_res <= alu_res mod pmem(res), u_pc <= 0
+
+    
+
+    -- NOTE: place all new micro programs above upd, in case update needs to...update
+    
+    "000000000000000000000001",  -- 43:upd      player_x <= pmem(x_pos)
+    "000000000000000000000010",  --             player_y <= pmem(y_pos)
+    "000000000000000000000011",  --             height <= pmem(height_pos)
+    "000000000000000000000100",  --             gap <= pmem(gap_pos)
+    "000000000000000000000101",  --             speed <= pmem(speed_pos)
+    "000000000000001100000000",  --             micro_pc <= 0
+    
     
     "000000000000000000000000",  --             c
     "000000000000000000000000",  --             c
     "000000000000000000000000",  --             c
-
 
     "000000000000000000000000",  -- XX:INS      comment         
     "000000000000000000000000",  --             c    
@@ -523,26 +558,24 @@ begin  -- Behavioral
   -- fetching micro_instr
   micro_instr <= micro_mem(to_integer(unsigned(micro_pc)));
 
-  -- Pixels
-  player_x <= player_x_internal;
-  player_y <= player_y_internal;
-
-  -- Terrain
-  gap <= gap_internal;
-  height <= height_internal;
+  
+  -- Speed
+  speed <= speed_internal;
 
 
   process(clk)
   begin
     if rising_edge(clk) then
       if micro_instr = "000000000000000000000001" then
-        player_x_internal <= to_integer(unsigned(pmem(to_integer(unsigned(x_pos)))));
+        player_x <= to_integer(unsigned(pmem(to_integer(unsigned(x_pos)))));
       elsif micro_instr = "000000000000000000000010" then
-        player_y_internal <= to_integer(unsigned(pmem(to_integer(unsigned(y_pos)))));
+        player_y <= to_integer(unsigned(pmem(to_integer(unsigned(y_pos)))));
       elsif micro_instr = "000000000000000000000011" then
-        height_internal <= to_integer(unsigned(pmem(to_integer(unsigned(height_pos)))));
+        height <= to_integer(unsigned(pmem(to_integer(unsigned(height_pos)))));
       elsif micro_instr = "000000000000000000000100" then
-        gap_internal <= to_integer(unsigned(pmem(to_integer(unsigned(gap_pos)))));
+        gap <= to_integer(unsigned(pmem(to_integer(unsigned(gap_pos)))));
+      elsif micro_instr = "000000000000000000000101" then
+        speed_internal <= to_integer(unsigned(pmem(to_integer(unsigned(speed_pos)))));        
       end if;
     end if;
   end process;
@@ -639,9 +672,10 @@ begin  -- Behavioral
       end if;
      
 
-      if player_upd_counter = PLAYER_UPDATE_LATENCY then
+      if player_upd_counter >= player_speed then
         player_upd_alert <= '1';
         player_upd_counter <= 0;
+        progress <= progress + 1;
       else
         player_upd_counter <= player_upd_counter + 1;
       end if;
@@ -659,6 +693,7 @@ begin  -- Behavioral
     end if;
   end process;
 
+  player_speed <= (speed_internal*1000) + ((1000-speed_internal)*750);
   
   -- res
   process(clk)
@@ -794,13 +829,13 @@ begin  -- Behavioral
           micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
         end if;
 
-      elsif SEQ = "1001"  then --jmp if N = 1      --BN--
+      elsif SEQ = "1001" then --jmp if N = 1      --BN--
         if n_flag = '0' then
           micro_pc <= MICRO_ADR;
         else
           micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
         end if;
-        
+
       elsif SEQ = "1111" then
         micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
 
@@ -822,6 +857,9 @@ end process;
   alu_and <= alu_res and data_bus;
   alu_or <= alu_res or data_bus;
   alu_xor <= alu_res xor data_bus;
+
+  alu_int <= to_integer(unsigned(alu_res));
+  alu_mod <= std_logic_vector(to_unsigned(alu_int mod 4, 16));
 
   
   -- alu_res
@@ -919,12 +957,16 @@ end process;
           n_flag <= alu_xor(15);
           o_flag <= '0';
           c_flag <= '0';
-        when "111" =>
-          alu_res <= alu_res;                                               --||UNUSED||
+        when "111" => 
+          alu_res <= alu_mod;                                               --MOD
+          if alu_mod = "0000000000000000" then
+            z_flag <= '1';
+          else
+            z_flag <= '0';
+          end if;
           n_flag <= '0';
           o_flag <= '0';
           c_flag <= '0';
-          z_flag <= '0';
          
         when others =>
           if FROM_BUS = "0100" then
