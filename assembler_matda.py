@@ -57,10 +57,11 @@ op_code = {
     'PCMP': '3D',
     'PMOD': '40',
     'EINT': '43',
-    'UPD' : '47',
+    'LPRG': '47',
+    'UPD' : '48',
     'DIE' : 'FF'
     }
-has_one_arg = ['BEQ', 'BNE', 'BN', 'JMP', 'RES', 'RAN', 'BP']
+has_one_arg = ['BEQ', 'BNE', 'BN', 'JMP', 'RES', 'RAN', 'BP', 'PCMP', 'LPRG']
 has_two_args = ['MV', 'ADD', 'SUB', 'NOT', 'OR', 'XOR',  'CMP', 'AND' ]
 prefixes = ['&', '*']
 
@@ -72,9 +73,6 @@ with open(sys.argv[1]) as f:
 line_nr = 0;
 labels = {}
 instructions = ''
-positions = '\n'
-imp_pos = ['TERR', 'RESET', 'COLL']
-
 lines_cp = copy.deepcopy(lines)
 
 # Get all labels numbered correctly
@@ -144,13 +142,6 @@ for line in lines:
 
 
 
-for label in labels:
-    if label in imp_pos:
-        positions += label + " : " + str(hex(int(labels[label]))) + "\n"
-
-
-
 f = open('machine_code','w')
 f.write(instructions)
-f.write(positions)
 f.close()

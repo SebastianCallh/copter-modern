@@ -16,10 +16,12 @@ RELEASE
 PRG
 P_CNT
 SPD
+T_PREF
 START	MV COLL COL_I  "Setting up interupts"
 	MV TERR TER_I
 	MV RESET RES_I
-	MV 150 P_X
+	EINT           "enable interrupts"
+	MV 150 P_X     "setup gamestart"
 	MV 200 P_Y
 	MV 15 HEIGHT
 	MV 30 GAP
@@ -27,10 +29,16 @@ START	MV COLL COL_I  "Setting up interupts"
 	MV 0 P_CNT
 	MV 500 SPD
 	UPD
-	EINT
 GAME_L	CMP 1 P_UPD    "check if player pos should update"
 	BEQ UP_OR_D     "if yes, jump to up_or_d"
+	PCMP 1
+	BEQ GAP_DE
 	JMP GAME_L     "else, back to gameloop"
+GAP_DE	LPRG 0
+	CMP 1 GAP
+	BN GAME_L
+	SUB 1 GAP
+	JMP GAME_L
 UP_OR_D	MV 0 P_UPD
 	CMP 0 PRESS
 	BEQ P_DOWN

@@ -137,5 +137,6 @@ RFI = x"3B"
 PCMP= x"3D"
 PMOD= x"40"
 EINT= x"43"
-UPD = x"47"  (UPDATE POS)
+LPRG= x"47"  (LOAD PROGRESS)
+UPD = x"48"  (UPDATE POS)
 DIE = ""

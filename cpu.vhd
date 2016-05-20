@@ -118,7 +118,16 @@ architecture Behavioral of CPU is
 
   signal player_speed : integer;
 
+  -- Progress signals
   signal progress : unsigned(15 downto 0) := (others => '0');
+  signal progress_counter : integer := 0;  -- updates progress every second
+  signal PROGRESS_LATENCY : integer := 100000000;  -- 1 second (if clock at 100MHz)
+
+  -- Score signals
+  signal score : integer := 0;         -- current score
+  signal score_counter : integer := 0;
+  signal SCORE_LATENCY : integer := 10000000;  -- 0.1 second (if clock at 100MHz)
+
   
   -- Alias
   alias TO_BUS : std_logic_vector(3 downto 0) is micro_instr(23 downto 20);     -- to bus
@@ -133,7 +142,6 @@ architecture Behavioral of CPU is
 
 
   -- Interrupt vectors
-
   constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"0000";
   constant TERRAIN_CHANGE_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"0001";
   constant RESET_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"0000";
@@ -150,6 +158,8 @@ architecture Behavioral of CPU is
   signal pmem : ram_t := (
 
 -- The processed assembly code is pasted here
+
+x"0000",
 x"0000",
 x"0000",
 x"0000",
@@ -171,15 +181,16 @@ x"0000",
 x"3420",
 x"0000",
 x"1620",
-x"00f1",
+x"0104",
 x"3420",
 x"0001",
 x"1620",
-x"00c9",
+x"00dc",
 x"3420",
 x"0002",
 x"1620",
-x"011e",
+x"0131",
+x"4300",
 x"3420",
 x"0004",
 x"1620",
@@ -208,16 +219,33 @@ x"3420",
 x"0011",
 x"1620",
 x"01f4",
-x"4700",
-x"4300",
+x"4800",
 x"3420",
 x"000c",
 x"3620",
 x"0001",
 x"1F20",
-x"0044",
+x"0057",
+x"3D20",
+x"0001",
+x"1F20",
+x"0049",
 x"3320",
-x"003c",
+x"003d",
+x"4720",
+x"0000",
+x"3420",
+x"0008",
+x"3620",
+x"0001",
+x"2320",
+x"003d",
+x"3420",
+x"0008",
+x"1B20",
+x"0001",
+x"3320",
+x"003d",
 x"3420",
 x"000c",
 x"1620",
@@ -227,13 +255,13 @@ x"000d",
 x"3620",
 x"0000",
 x"1F20",
-x"005e",
+x"0071",
 x"3420",
 x"000e",
 x"3620",
 x"0000",
 x"1F20",
-x"007a",
+x"008d",
 x"3420",
 x"000d",
 x"1620",
@@ -243,19 +271,19 @@ x"000e",
 x"1620",
 x"0000",
 x"3320",
-x"003c",
+x"003d",
 x"3420",
 x"0005",
 x"3620",
 x"01c2",
 x"3920",
-x"003c",
+x"003d",
 x"3420",
 x"0010",
 x"3620",
 x"0005",
 x"2120",
-x"0096",
+x"00a9",
 x"3420",
 x"0010",
 x"1620",
@@ -265,25 +293,25 @@ x"0006",
 x"3620",
 x"0003",
 x"1F20",
-x"0096",
+x"00a9",
 x"3420",
 x"0006",
 x"1720",
 x"0001",
 x"3320",
-x"0096",
+x"00a9",
 x"3420",
 x"0005",
 x"3620",
 x"0003",
 x"2320",
-x"003c",
+x"003d",
 x"3420",
 x"0010",
 x"3620",
 x"0005",
 x"2120",
-x"0096",
+x"00a9",
 x"3420",
 x"0010",
 x"1620",
@@ -293,13 +321,13 @@ x"0006",
 x"3620",
 x"fffd",
 x"1F20",
-x"0096",
+x"00a9",
 x"3420",
 x"0006",
 x"1B20",
 x"0001",
 x"3320",
-x"0096",
+x"00a9",
 x"3420",
 x"0010",
 x"1720",
@@ -312,23 +340,23 @@ x"3420",
 x"000c",
 x"1620",
 x"0000",
-x"4700",
+x"4800",
 x"3320",
-x"003c",
+x"003d",
 x"3420",
 x"0007",
 x"3620",
 x"0001",
 x"1F20",
-x"0126",
+x"0139",
 x"3420",
 x"0007",
 x"1B20",
 x"0001",
-x"4700",
+x"4800",
 x"3B00",
 x"3320",
-x"003c",
+x"003d",
 x"3420",
 x"0009",
 x"1660",
@@ -342,15 +370,15 @@ x"0009",
 x"3620",
 x"003a",
 x"1F20",
-x"0126",
+x"0139",
 x"3420",
 x"0007",
 x"1720",
 x"0001",
-x"4700",
+x"4800",
 x"3B00",
 x"3320",
-x"003c",
+x"003d",
 x"3520",
 x"000a",
 x"3420",
@@ -362,15 +390,15 @@ x"000a",
 x"3620",
 x"0000",
 x"1F20",
-x"00a5",
+x"00b8",
 x"3420",
 x"000a",
 x"3620",
 x"0001",
 x"1F20",
-x"00b3",
+x"00c6",
 x"3320",
-x"0126",
+x"0139",
 x"3420",
 x"0003",
 x"1620",
@@ -403,7 +431,7 @@ x"3420",
 x"0008",
 x"1620",
 x"0041",
-x"4700",
+x"4800",
 x"3420",
 x"000a",
 x"1620",
@@ -413,13 +441,13 @@ x"000a",
 x"3620",
 x"0000",
 x"1F20",
-x"010e",
+x"0121",
 x"3420",
 x"000a",
 x"1B20",
 x"0001",
 x"3320",
-x"0102",
+x"0115",
 x"3420",
 x"0008",
 x"1620",
@@ -432,10 +460,10 @@ x"3420",
 x"0005",
 x"1620",
 x"0014",
-x"4700",
+x"4800",
 x"3B00",
 x"3320",
-x"003c",
+x"003d",
 x"3420",
 x"0003",
 x"1620",
@@ -446,9 +474,8 @@ x"1620",
 x"00c8",
 x"3B00",
 x"3320",
-x"003c",
+x"003d",
 x"FF00",
-
 
 
 
@@ -559,11 +586,12 @@ others => "0000000000000000");
     "000100100000000000000000",  -- 44:intr     asr <= pc
     "001100000000000000000000",  --             fetch pmem(asr)
     "001100010000010000000001",  --             pc <= pmem(asr), micro_pc <= 1   
- 
+
+    "001011100000000000000000",  -- 47:lprg     progress <= asr
     
     -- NOTE: place all new micro programs above upd, in case update needs to...update
     
-    "000000000000000000000001",  -- 47:upd      player_x <= pmem(x_pos)
+    "000000000000000000000001",  -- 48:upd      player_x <= pmem(x_pos)
     "000000000000000000000010",  --             player_y <= pmem(y_pos)
     "000000000000000000000011",  --             height <= pmem(height_pos)
     "000000000000000000000100",  --             gap <= pmem(gap_pos)
@@ -599,6 +627,10 @@ begin  -- Behavioral
   process(clk)
   begin
     if rising_edge(clk) then
+
+      -- Put the information from pmem on the correct signals
+      -- (this makes sure vga_motor and pic_mem has the correct information
+      -- for drawing on the screen)
       if micro_instr = "000000000000000000000001" then
         player_x <= to_integer(unsigned(pmem(to_integer(unsigned(x_pos)))));
       elsif micro_instr = "000000000000000000000010" then
@@ -629,46 +661,56 @@ begin  -- Behavioral
       elsif SEQ = "1100" then
         intr_enable <= '1';
         
-      --handle interrupts 
-      elsif SEQ = "1111" then
+      --handle interrupts
+      elsif SEQ = "1111" and intr_enable = '1' then        
+
+        -- Store important information to be returned after the interrupt
+        intr_pc <= pc;
+        intr_res <= res;
+        intr_alu_res <= alu_res;
+        intr_z <= z_flag;
+        intr_n <= n_flag;
+        intr_o <= o_flag;
+        intr_c <= c_flag;
+
+ 
+        -- Set pc to the correct interrupt vector and disables interrupts
+        -- (this will be reset
         if reset_alert = '1' then
           intr_enable <= '0';
           reset_alert <= '0';
           pc <= RESET_INTERRUPT_VECTOR;
-        elsif collision_alert = '1' and intr_enable = '1' then
+        elsif collision_alert = '1' then
           intr_enable <= '0';
           collision_alert <= '0';
-          intr_pc <= pc;
-          intr_res <= res;
-          intr_alu_res <= alu_res;
           pc <= COLLISION_INTERRUPT_VECTOR;
-        elsif terrain_alert = '1' and intr_enable = '1' then
+        elsif terrain_alert = '1'  then
           intr_enable <= '0';
           terrain_alert <= '0';
-          intr_pc <= pc;
-          intr_res <= res;
-          intr_alu_res <= alu_res;
           pc <= TERRAIN_CHANGE_INTERRUPT_VECTOR;
         end if;
 
+      -- Return from interrupt: enable interrupts and restore pc
       elsif SEQ = "1010" then
         intr_enable <= '1';
         pc <= intr_pc;
 
+      -- Enable interrupts
       elsif SEQ = "1100" then
         intr_enable <= '1';
       end if;
 
- 
-      
-
-      
+      -- Check if the terrain needs to update
       if terrain_change = '1' and terrain_prev = '0' then
           terrain_alert <= '1';
       end if;
-     if collision = '1' and collision_prev = '0' then
+
+      -- Check if there has been a collision
+      if collision = '1' and collision_prev = '0' then
           collision_alert <= '1';
       end if;
+
+      -- Check if the reset button has been pressed
       if reset = '1' and reset_prev = '0' then
           reset_alert <= '1';
       end if;
@@ -702,43 +744,69 @@ begin  -- Behavioral
       elsif TO_BUS = "1100" then
         pmem_res <= pmem(to_integer(unsigned(res)));
 
+      -- Write to memory if the player position needs to update
       elsif player_upd_alert = '1' then
         player_upd_alert <= '0';
         pmem(to_integer(unsigned(player_upd))) <= ONE;
-        
+
+      -- Write to memory if the spacebar has been released
       elsif release_alert = '1' then
         release_alert <= '0';
         pmem(to_integer(unsigned(release_pos))) <= ONE;
 
+      -- Write to memory if the spacebar has been pressed
       elsif press_alert = '1' then
         press_alert <= '0';
         pmem(to_integer(unsigned(press_pos))) <= ONE;
         
       end if;
      
-
+      -- Creates a delay (based on speed) which decides when the player position
+      -- should update
       if player_upd_counter >= player_speed then
         player_upd_alert <= '1';
         player_upd_counter <= 0;
-        progress <= progress + 1;
       else
         player_upd_counter <= player_upd_counter + 1;
       end if;
       
-
+      -- Check if the spacebar has been pressed
       if input = '1' and input_prev = '0' then
         press_alert <= '1';
       end if;
 
+      -- Check if the spacebar has been released
       if input = '0' and input_prev = '1' then
         release_alert <= '1';
       end if;
+      
       input_prev <= input;
  
     end if;
   end process;
 
+  -- Makes sure that the player speed gets faster as speed increases,
+  -- but not as fast as the terrain speed increases
   player_speed <= (speed_internal*1000) + ((1000-speed_internal)*900);
+
+
+  -- progress
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if FROM_BUS = "1110" then
+        progress <= unsigned(data_bus);
+
+      -- Increases progress every second (on a 100MHz clock)
+      elsif progress_counter = PROGRESS_LATENCY then
+        progress <= progress + 1;
+        progress_counter <= 0;
+      else
+        progress_counter <= progress_counter + 1;
+      end if;
+    end if;
+  end process;
+
   
   -- res
   process(clk)
@@ -746,7 +814,8 @@ begin  -- Behavioral
     if rising_edge(clk) then
       if FROM_BUS = "0101" then
         res <= data_bus;
-        
+
+      -- Return from interrupt: restore res
       elsif SEQ = "1010" then
         res <= intr_res;
         
@@ -808,7 +877,7 @@ begin  -- Behavioral
   end process;
 
   
-  -- Pushing data TO the bus
+  -- Moving data TO the bus
   with TO_BUS select
     data_bus <= pc when "0001",    
                 asr when "0010",
@@ -823,6 +892,7 @@ begin  -- Behavioral
                 reg4 when "1011",       
                 pmem_res when "1100",
                 ran_nr(31 downto 16) when "1101",
+                std_logic_vector(progress) when "1110",
 
                 data_bus when others;
 
@@ -881,20 +951,21 @@ begin  -- Behavioral
           micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
         end if;
 
+      -- Jump to the interrupt micro program if there's an interrupt and
+      -- interrupts are enabled
       elsif SEQ = "1111" then
         if intr_enable = '1' then
           if (reset_alert = '1') or (collision_alert = '1') or (terrain_alert = '1')  then
-          micro_pc <= MICRO_ADR;
+            micro_pc <= MICRO_ADR;
           else
-          micro_pc <= std_logic_vector(unsigned(micro_pc) + 1); 
+            micro_pc <= std_logic_vector(unsigned(micro_pc) + 1); 
           end if;
         else
           micro_pc <= std_logic_vector(unsigned(micro_pc) + 1); 
         end if;
-
-
+      -- Fetch new instruction when returning from interrupt
       elsif SEQ = "1100" then
-        micro_pc <= MICRO_ADR;
+        micro_pc <= MICRO_ADR;          -- MICRO_ADR will be 0
         
       elsif SEQ = "1010" then
         micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
@@ -1029,8 +1100,13 @@ end process;
           if FROM_BUS = "0100" then
             alu_res <= data_bus;
 
+          -- Return from interrupt: restore all flags and alu_res
           elsif SEQ = "1010" then
             alu_res <= intr_alu_res;
+            z_flag <= intr_z;
+            n_flag <= intr_n;
+            o_flag <= intr_o;
+            c_flag <= intr_c;
         
           else
             alu_res <= alu_res;
