@@ -63,10 +63,10 @@
 	
 1000    jpm if not 32 bit instr
 1001    jmp if N = 1
-1010    enable interrupts
+1010    return from interrupt
 1011    jmp if progress <=
 	
-1100    
+1100    enable interrupts
 1101    
 1110    
 1111	check interrupts
@@ -136,5 +136,6 @@ BP  = x"39"
 RFI = x"3B"
 PCMP= x"3D"
 PMOD= x"40"
-UPD = x"43"  (UPDATE POS)
+EINT= x"43"
+UPD = x"47"  (UPDATE POS)
 DIE = ""

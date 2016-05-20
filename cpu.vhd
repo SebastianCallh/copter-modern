@@ -26,9 +26,9 @@ end CPU;
 
 architecture Behavioral of CPU is
 
-  -- Signals
+  -- Signals that connect to the bus (and the bus itself)
   signal data_bus : std_logic_vector(15 downto 0);
-  signal pc : std_logic_vector(15 downto 0) := x"000D";
+  signal pc : std_logic_vector(15 downto 0) := x"0012";
   signal asr : std_logic_vector(15 downto 0);
   signal alu_input : signed(15 downto 0);
   signal alu_res : std_logic_vector(15 downto 0);
@@ -72,7 +72,11 @@ architecture Behavioral of CPU is
   signal intr_pc : std_logic_vector(15 downto 0);
   signal intr_res : std_logic_vector(15 downto 0);
   signal intr_alu_res : std_logic_vector(15 downto 0);
-  signal intr_enable : std_logic := '1';
+  signal intr_z : std_logic;
+  signal intr_c : std_logic;
+  signal intr_n : std_logic;
+  signal intr_o : std_logic;  
+  signal intr_enable : std_logic := '0';
 
   
    -- ALU signals
@@ -101,15 +105,15 @@ architecture Behavioral of CPU is
 
 
   -- Constants (Variables)
-  signal x_pos : std_logic_vector(15 downto 0) := x"0001";
-  signal y_pos : std_logic_vector(15 downto 0) := x"0002";
-  signal height_pos : std_logic_vector(15 downto 0) := x"0004";
-  signal gap_pos : std_logic_vector(15 downto 0) := x"0005";
+  signal x_pos : std_logic_vector(15 downto 0) := x"0004";
+  signal y_pos : std_logic_vector(15 downto 0) := x"0005";
+  signal height_pos : std_logic_vector(15 downto 0) := x"0007";
+  signal gap_pos : std_logic_vector(15 downto 0) := x"0008";
 
-  signal player_upd : std_logic_vector(15 downto 0) := x"0009";
-  signal press_pos : std_logic_vector(15 downto 0) := x"000A";
-  signal release_pos : std_logic_vector(15 downto 0) := x"000B";
-  signal speed_pos : std_logic_vector(15 downto 0) := x"000E";
+  signal player_upd : std_logic_vector(15 downto 0) := x"000C";
+  signal press_pos : std_logic_vector(15 downto 0) := x"000D";
+  signal release_pos : std_logic_vector(15 downto 0) := x"000E";
+  signal speed_pos : std_logic_vector(15 downto 0) := x"0011";
   signal speed_internal : integer := 1000;
 
   signal player_speed : integer;
@@ -129,11 +133,10 @@ architecture Behavioral of CPU is
 
 
   -- Interrupt vectors
-  constant RESET_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00e1";  --220
-  constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00e1"; --230
-  constant INPUT_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00F0";  --240
-  constant NEW_COLUMN_INTERUPT_VECTOR : std_logic_vector(15 downto 0) := x"00FA";  --250
-  constant TERRAIN_CHANGE_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"00b9";
+
+  constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"0000";
+  constant TERRAIN_CHANGE_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"0001";
+  constant RESET_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"0000";
 
   
   -- Player update frequency
@@ -146,6 +149,10 @@ architecture Behavioral of CPU is
   type ram_t is array (0 to 4096) of std_logic_vector(15 downto 0);
   signal pmem : ram_t := (
 
+-- The processed assembly code is pasted here
+x"0000",
+x"0000",
+x"0000",
 x"0000",
 x"0000",
 x"0000",
@@ -162,25 +169,71 @@ x"0000",
 x"0000",
 x"0000",
 x"3420",
+x"0000",
+x"1620",
+x"00f1",
+x"3420",
 x"0001",
 x"1620",
-x"0096",
+x"00c9",
 x"3420",
 x"0002",
 x"1620",
-x"0032",
+x"011e",
 x"3420",
 x"0004",
 x"1620",
-x"000f",
+x"0096",
 x"3420",
 x"0005",
 x"1620",
+x"00c8",
+x"3420",
+x"0007",
+x"1620",
+x"000f",
+x"3420",
+x"0008",
+x"1620",
 x"001e",
 x"3420",
-x"0003",
+x"0006",
 x"1620",
 x"0001",
+x"3420",
+x"0010",
+x"1620",
+x"0000",
+x"3420",
+x"0011",
+x"1620",
+x"01f4",
+x"4700",
+x"4300",
+x"3420",
+x"000c",
+x"3620",
+x"0001",
+x"1F20",
+x"0044",
+x"3320",
+x"003c",
+x"3420",
+x"000c",
+x"1620",
+x"0000",
+x"3420",
+x"000d",
+x"3620",
+x"0000",
+x"1F20",
+x"005e",
+x"3420",
+x"000e",
+x"3620",
+x"0000",
+x"1F20",
+x"007a",
 x"3420",
 x"000d",
 x"1620",
@@ -188,255 +241,229 @@ x"0000",
 x"3420",
 x"000e",
 x"1620",
-x"01f4",
-x"4300",
-x"3420",
-x"0009",
-x"3620",
-x"0001",
-x"1F20",
-x"0034",
-x"3320",
-x"002c",
-x"3420",
-x"0009",
-x"1620",
-x"0000",
-x"3420",
-x"000a",
-x"3620",
-x"0000",
-x"1F20",
-x"004e",
-x"3420",
-x"000b",
-x"3620",
-x"0000",
-x"1F20",
-x"006a",
-x"3420",
-x"000a",
-x"1620",
-x"0000",
-x"3420",
-x"000b",
-x"1620",
 x"0000",
 x"3320",
-x"002c",
+x"003c",
 x"3420",
-x"0002",
+x"0005",
 x"3620",
 x"01c2",
 x"3920",
-x"002c",
+x"003c",
 x"3420",
-x"000d",
+x"0010",
 x"3620",
 x"0005",
 x"2120",
-x"0086",
+x"0096",
 x"3420",
-x"000d",
+x"0010",
 x"1620",
 x"0000",
 x"3420",
-x"0003",
+x"0006",
 x"3620",
 x"0003",
 x"1F20",
-x"0086",
+x"0096",
 x"3420",
-x"0003",
+x"0006",
 x"1720",
 x"0001",
 x"3320",
-x"0086",
+x"0096",
 x"3420",
-x"0002",
+x"0005",
 x"3620",
 x"0003",
 x"2320",
-x"002c",
+x"003c",
 x"3420",
-x"000d",
+x"0010",
 x"3620",
 x"0005",
 x"2120",
-x"0086",
+x"0096",
 x"3420",
-x"000d",
+x"0010",
 x"1620",
 x"0000",
 x"3420",
-x"0003",
+x"0006",
 x"3620",
 x"fffd",
 x"1F20",
-x"0086",
+x"0096",
 x"3420",
-x"0003",
+x"0006",
 x"1B20",
 x"0001",
 x"3320",
-x"0086",
+x"0096",
 x"3420",
-x"000d",
+x"0010",
 x"1720",
 x"0001",
 x"3420",
-x"0002",
+x"0005",
 x"1760",
-x"0003",
+x"0006",
 x"3420",
-x"0009",
+x"000c",
 x"1620",
 x"0000",
-x"4300",
+x"4700",
 x"3320",
-x"002c",
+x"003c",
 x"3420",
-x"0004",
+x"0007",
 x"3620",
 x"0001",
 x"1F20",
-x"0116",
+x"0126",
 x"3420",
-x"0004",
+x"0007",
 x"1B20",
 x"0001",
-x"4300",
+x"4700",
 x"3B00",
 x"3320",
-x"002c",
+x"003c",
 x"3420",
-x"0006",
+x"0009",
 x"1660",
-x"0004",
+x"0007",
 x"3420",
-x"0006",
+x"0009",
 x"1760",
-x"0005",
+x"0008",
 x"3420",
-x"0006",
+x"0009",
 x"3620",
 x"003a",
 x"1F20",
-x"0116",
+x"0126",
 x"3420",
-x"0004",
+x"0007",
 x"1720",
 x"0001",
-x"4300",
+x"4700",
 x"3B00",
 x"3320",
-x"002c",
+x"003c",
 x"3520",
-x"0007",
+x"000a",
 x"3420",
-x"0007",
+x"000a",
 x"2720",
 x"0003",
 x"3420",
-x"0007",
+x"000a",
 x"3620",
 x"0000",
 x"1F20",
-x"0095",
+x"00a5",
 x"3420",
-x"0007",
+x"000a",
 x"3620",
 x"0001",
 x"1F20",
-x"00a3",
+x"00b3",
 x"3320",
-x"0116",
-x"3420",
-x"0000",
-x"1620",
-x"0001",
-x"3420",
-x"0001",
-x"1620",
-x"00c8",
-x"3420",
-x"0002",
-x"1620",
-x"012c",
+x"0126",
 x"3420",
 x"0003",
 x"1620",
 x"0001",
 x"3420",
+x"0004",
+x"1620",
+x"00c8",
+x"3420",
+x"0005",
+x"1620",
+x"012c",
+x"3420",
+x"0006",
+x"1620",
 x"0001",
+x"3420",
+x"0004",
 x"1720",
 x"0006",
 x"3420",
-x"0000",
+x"0003",
 x"1620",
 x"0001",
 x"3420",
-x"0004",
+x"0007",
 x"1620",
 x"0000",
 x"3420",
-x"0005",
+x"0008",
 x"1620",
 x"0041",
-x"4300",
+x"4700",
 x"3420",
-x"0007",
+x"000a",
 x"1620",
 x"ffff",
 x"3420",
-x"0007",
+x"000a",
 x"3620",
 x"0000",
 x"1F20",
-x"00fe",
+x"010e",
 x"3420",
-x"0007",
+x"000a",
 x"1B20",
 x"0001",
 x"3320",
-x"00f2",
+x"0102",
 x"3420",
-x"0005",
+x"0008",
 x"1620",
 x"001e",
 x"3420",
-x"0004",
+x"0007",
 x"1620",
 x"000f",
 x"3420",
-x"0002",
+x"0005",
 x"1620",
-x"00c8",
-x"4300",
+x"0014",
+x"4700",
 x"3B00",
 x"3320",
-x"002c",
+x"003c",
 x"3420",
-x"0000",
+x"0003",
 x"1620",
 x"0001",
 x"3420",
-x"0002",
+x"0005",
 x"1620",
 x"00c8",
 x"3B00",
 x"3320",
-x"002c",
+x"003c",
 x"FF00",
+
+
+
+
 
 others => "0000000000000000");
 
   -- micro-MEM (Max is 255 for 8 bit addresses)
   type micro_mem_t is array (0 to 255) of std_logic_vector(23 downto 0);
   signal micro_mem : micro_mem_t := (
-  
-    "000000000000111100000000",  -- check for interrupts, ASR <= PC
-    "000100100000000000000000",
+
+-- Here are all the micro programs
+
+    
+    "000000000000111101000100",  -- check for interrupts, ASR <= PC
+    "000100100000000000000000",  -- asr <= pc
     "001100000000000000000000",  -- fetch instruction (only 16 bits)
     "001101100000000000000000",  -- and check for 32 bit instruction
     
@@ -527,10 +554,16 @@ others => "0000000000000000");
     "110000000111001100000000",  --             alu_res <= alu_res mod pmem(res), u_pc <= 0
 
     
+    "000000000000110000000000",  -- 43:eint     enable interrupts
 
+    "000100100000000000000000",  -- 44:intr     asr <= pc
+    "001100000000000000000000",  --             fetch pmem(asr)
+    "001100010000010000000001",  --             pc <= pmem(asr), micro_pc <= 1   
+ 
+    
     -- NOTE: place all new micro programs above upd, in case update needs to...update
     
-    "000000000000000000000001",  -- 43:upd      player_x <= pmem(x_pos)
+    "000000000000000000000001",  -- 47:upd      player_x <= pmem(x_pos)
     "000000000000000000000010",  --             player_y <= pmem(y_pos)
     "000000000000000000000011",  --             height <= pmem(height_pos)
     "000000000000000000000100",  --             gap <= pmem(gap_pos)
@@ -584,12 +617,19 @@ begin  -- Behavioral
   process(clk)
   begin
     if rising_edge(clk) then
+      -- pc to bus
       if FROM_BUS = "0001" then
         pc <= data_bus;
+
+      -- pc++
       elsif P_BIT = '1' then
         pc <= std_logic_vector(unsigned(pc) + 1);
+
+      -- enable interrupts
+      elsif SEQ = "1100" then
+        intr_enable <= '1';
         
-      --interrupts 
+      --handle interrupts 
       elsif SEQ = "1111" then
         if reset_alert = '1' then
           intr_enable <= '0';
@@ -614,8 +654,13 @@ begin  -- Behavioral
       elsif SEQ = "1010" then
         intr_enable <= '1';
         pc <= intr_pc;
-        
+
+      elsif SEQ = "1100" then
+        intr_enable <= '1';
       end if;
+
+ 
+      
 
       
       if terrain_change = '1' and terrain_prev = '0' then
@@ -693,7 +738,7 @@ begin  -- Behavioral
     end if;
   end process;
 
-  player_speed <= (speed_internal*1000) + ((1000-speed_internal)*750);
+  player_speed <= (speed_internal*1000) + ((1000-speed_internal)*900);
   
   -- res
   process(clk)
@@ -837,8 +882,20 @@ begin  -- Behavioral
         end if;
 
       elsif SEQ = "1111" then
-        micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
+        if intr_enable = '1' then
+          if (reset_alert = '1') or (collision_alert = '1') or (terrain_alert = '1')  then
+          micro_pc <= MICRO_ADR;
+          else
+          micro_pc <= std_logic_vector(unsigned(micro_pc) + 1); 
+          end if;
+        else
+          micro_pc <= std_logic_vector(unsigned(micro_pc) + 1); 
+        end if;
 
+
+      elsif SEQ = "1100" then
+        micro_pc <= MICRO_ADR;
+        
       elsif SEQ = "1010" then
         micro_pc <= std_logic_vector(unsigned(micro_pc) + 1);
         

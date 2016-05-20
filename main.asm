@@ -18,7 +18,7 @@ P_CNT
 SPD
 START	MV COLL COL_I  "Setting up interupts"
 	MV TERR TER_I
-	MV RESER RES_I
+	MV RESET RES_I
 	MV 150 P_X
 	MV 200 P_Y
 	MV 15 HEIGHT
@@ -27,6 +27,7 @@ START	MV COLL COL_I  "Setting up interupts"
 	MV 0 P_CNT
 	MV 500 SPD
 	UPD
+	EINT
 GAME_L	CMP 1 P_UPD    "check if player pos should update"
 	BEQ UP_OR_D     "if yes, jump to up_or_d"
 	JMP GAME_L     "else, back to gameloop"

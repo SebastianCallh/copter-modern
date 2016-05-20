@@ -56,7 +56,8 @@ op_code = {
     'RFI' : '3B',
     'PCMP': '3D',
     'PMOD': '40',
-    'UPD' : '43',
+    'EINT': '43',
+    'UPD' : '47',
     'DIE' : 'FF'
     }
 has_one_arg = ['BEQ', 'BNE', 'BN', 'JMP', 'RES', 'RAN', 'BP']
