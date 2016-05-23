@@ -30,10 +30,15 @@ START	MV COLL COL_I  "Setting up interupts"
 	MV 500 SPD
 	UPD
 GAME_L	CMP 1 P_UPD    "check if player pos should update"
-	BEQ UP_OR_D     "if yes, jump to up_or_d"
-	PCMP 10
-	BEQ GAP_DE
+	BEQ UP_OR_D    "if yes, jump to up_or_d"
+	PCMP 10        "check if progress reached 10"
+	BEQ INC_SPD    "if so, increase speed"
 	JMP GAME_L     "else, back to gameloop"
+INC_SPD	LPRG 0
+	CMP 300 SPD    "check spd-300"
+	BN GAME_L      "if negative, return to gameloop"
+	SUB 50 SPD     "else remove 50 from speed"
+	JMP GAME_L     "jump to gameloop"
 GAP_DE	LPRG 0
 	CMP 1 GAP
 	BN GAME_L
@@ -78,8 +83,8 @@ INCR	CMP 1 HEIGHT
 	JMP GAME_L
 DECR	MV &HEIGHT T_HEIGHT
 	ADD &GAP T_HEIGHT
-	CMP 58 T_HEIGHT
-	BEQ RETURN
+	CMP 57 T_HEIGHT
+	BP RETURN
 	ADD 1 HEIGHT
 	UPD
 	RFI
@@ -108,6 +113,7 @@ COMP	CMP 0 RAND1
 RET	MV 30 GAP
 	MV 15 HEIGHT
 	MV 20 P_Y
+	MV 500 SPD
 	UPD
 	RFI
 	JMP GAME_L
