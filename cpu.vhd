@@ -121,12 +121,12 @@ architecture Behavioral of CPU is
   -- Progress signals
   signal progress : unsigned(15 downto 0) := (others => '0');
   signal progress_counter : integer := 0;  -- updates progress every second
-  signal PROGRESS_LATENCY : integer := 100000000;  -- 1 second (if clock at 100MHz)
+  signal PROGRESS_LATENCY : integer := 10000000;  -- 1/10th second (if clock at 100MHz)
 
   -- Score signals
   signal score : integer := 0;         -- current score
   signal score_counter : integer := 0;
-  signal SCORE_LATENCY : integer := 10000000;  -- 0.1 second (if clock at 100MHz)
+  signal SCORE_LATENCY : integer := 10000000;  -- 1/10th second (if clock at 100MHz)
 
   
   -- Alias
@@ -227,7 +227,7 @@ x"0001",
 x"1F20",
 x"0057",
 x"3D20",
-x"0001",
+x"000a",
 x"1F20",
 x"0049",
 x"3320",
@@ -794,8 +794,10 @@ begin  -- Behavioral
   process(clk)
   begin
     if rising_edge(clk) then
+      -- bus to progress, reset progress_counter
       if FROM_BUS = "1110" then
         progress <= unsigned(data_bus);
+        progress_counter <= 0;
 
       -- Increases progress every second (on a 100MHz clock)
       elsif progress_counter = PROGRESS_LATENCY then

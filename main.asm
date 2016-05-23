@@ -31,7 +31,7 @@ START	MV COLL COL_I  "Setting up interupts"
 	UPD
 GAME_L	CMP 1 P_UPD    "check if player pos should update"
 	BEQ UP_OR_D     "if yes, jump to up_or_d"
-	PCMP 1
+	PCMP 10
 	BEQ GAP_DE
 	JMP GAME_L     "else, back to gameloop"
 GAP_DE	LPRG 0
