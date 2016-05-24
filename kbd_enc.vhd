@@ -4,6 +4,7 @@
 -- 16-feb-2016
 -- Version 1.1
 
+-- KBD is copied from VGA_LAB and modified for our computer
 
 -- library declaration
 library IEEE;
@@ -67,7 +68,6 @@ begin
   end process;
 	
   PS2Clk_op <= (not PS2Clk_Q1) and (not PS2Clk_Q2);
-	
   
   -- PS2 data shift register
 
@@ -90,14 +90,8 @@ begin
       end if;
     end if;
   end process;
-  
+
   ScanCode <= PS2Data_sr(8 downto 1);
-
-  --with ScanCode select
-  --  input <= '1' when x"29",	-- space
-  --           '0' when others;
-
-  
   
   -- PS2 bit counter
   -- The purpose of the PS2 bit counter is to tell the PS2 state machine when to change state
@@ -149,6 +143,8 @@ end process;
         end if;
       end if;
 
+      -- Checks for a spacebar press and
+      -- gives a 1 on the input signal until it is released
       if ScanCode = x"29" then
         if PS2State = MAKE then
           input <= '1';

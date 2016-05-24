@@ -103,7 +103,6 @@ begin
                          height=>height,
                          terrain_change=>terrain_change);
 
-  
   -- Clock divisor
   -- Divide system clock (100 MHz) by 4
   process(clk)
@@ -130,10 +129,10 @@ begin
       else
 	offset_count <= offset_count + 1;
       end if;
-
     end if;
   end process;
 
+  -- Signals a new column every TILE_SIZE offset
   process (clk)
   begin
     if rising_edge(clk) then
@@ -143,8 +142,7 @@ begin
     end if;
   end process;
 
-
-
+  -- Responds to dispatched interrupts and alert signals
   process(clk)
   begin
     if rising_edge(clk) then
@@ -287,6 +285,7 @@ begin
   -- 640 480
   blank <= '1' when Xpixel >= "1010000000" or Ypixel >= "111100000" else '0';
 
+  -- Process for blanking out pixels when needed
   process(clk)
   begin
     if rising_edge(clk) then

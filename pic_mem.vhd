@@ -123,7 +123,8 @@ architecture Behavioral of pic_mem is
 
 begin
 
-  
+  -- The offset is how long into our tile grid we've traveller
+  -- The grid loos every 1024 tiles
   offset_x <= (pixel_x + offset) mod 1024;
   grid_coord_x <= offset_x(10 downto 3);
   grid_coord_y <= pixel_y(9 downto 3);
@@ -137,7 +138,6 @@ begin
     begin
       if rising_edge(clk) then
         if (we = '1') then
-          --GER FATAL ERROR VID SIMULERING
           grid_mem(conv_integer(tile_y) * SCREEN_WIDTH +
                     conv_integer(tile_x)) <= data_in;
         end if;
@@ -162,8 +162,7 @@ begin
   begin
     if rising_edge(clk) then
       if (pixel_x >= player_x) and (pixel_y >= player_y) then
-        if (pixel_x < (player_x + SPRITE_SIZE)) and (pixel_y < (player_y + SPRITE_SIZE)) then
-         
+        if (pixel_x < (player_x + SPRITE_SIZE)) and (pixel_y < (player_y + SPRITE_SIZE)) then         
           sprite_pixel <= sprite_mem(((sprite_y_mod * (SPRITE_SIZE/2)) + sprite_x_mod) mod 256);
         else
           sprite_pixel <= x"00";
@@ -175,7 +174,7 @@ begin
   end process;
 
   --pixel chooser
-  -- Sends the right pixel to out_pixel, sends collision signal
+  -- Sends the right pixel to out_pixel and sends collision signal
   -- when the player overlaps with a non-transparent pixel in tile_grid
   process (clk)
   begin
