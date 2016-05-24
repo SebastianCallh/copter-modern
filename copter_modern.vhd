@@ -209,8 +209,9 @@ begin
     if rising_edge(clk) then
       if collision = '1' then
         point_wait <= '1';
+        points_counter <= 0;
         
-      elsif points_counter = POINTS_LATENCY then
+      elsif points_counter > POINTS_LATENCY then
         points_counter <= 0;
         point_wait <= '0';
         
