@@ -18,11 +18,11 @@ P_CNT
 SPD
 T_PREF
 PRG_CNT
-START	MV COLL COL_I  "Setting up interupts"
+START	MV COLL COL_I  "setting up interupt vectors"
 	MV TERR TER_I
 	MV RESET RES_I
 	EINT           "enable interrupts"
-	MV 150 P_X     "setup gamestart"
+GAME_S	MV 150 P_X     "setup gamestart"
 	MV 200 P_Y
 	MV 15 HEIGHT
 	MV 30 GAP
@@ -37,7 +37,7 @@ GAME_L	CMP 1 P_UPD    "check if player pos should update"
 	JMP GAME_L     "else, back to gameloop"
 INC_SPD	LPRG 0
 	ADD 1 PRG_CNT
-	CMP 300 SPD    "check spd-300"
+	CMP 180 SPD    "check current speed"
 	BN DEC_GAP     "if negative, decrease gap"
 	SUB 10 SPD     "else increase speed"
 DEC_GAP	CMP 10 PRG_CNT "check progress counter"
@@ -119,9 +119,9 @@ RET	MV 30 GAP
 RESET	MV 1 RUNNING
 	MV 200 P_Y
 RETURN	RFI
-MV_DOWN	MV 1 T_PREF
-	RFI
-MV_UP	MV 0 T_PREF
-	RFI
+MV_DOWN	MV 1 T_PREF   "make it more likely that the terrain will generate downwards"
+	RFI           "return from interrupt"
+MV_UP	MV 0 T_PREF   "make it more likely that the terrain will generate upwards"
+	RFI           "return from interrupt"
 	JMP GAME_L
 END	DIE           "else die"

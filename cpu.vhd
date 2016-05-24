@@ -243,7 +243,7 @@ x"0001",
 x"3420",
 x"0011",
 x"3620",
-x"012c",
+x"00b4",
 x"2320",
 x"005a",
 x"3420",
@@ -734,7 +734,8 @@ begin  -- Behavioral
       if reset = '1' and reset_prev = '0' then
           reset_alert <= '1';
       end if;
-      
+
+      -- Keep track of previous 
       terrain_prev <= terrain_change;
       collision_prev <= collision;
       reset_prev <= reset;
@@ -745,6 +746,7 @@ begin  -- Behavioral
   process(clk)
   begin
     if rising_edge(clk) then
+      -- from bus to asr
       if FROM_BUS = "0010" then
         asr <= data_bus;
       end if;
@@ -755,12 +757,19 @@ begin  -- Behavioral
   process(clk)
   begin
     if rising_edge(clk) then
+      -- from bus to pmem(asr)
       if FROM_BUS = "0011" then
         pmem(to_integer(unsigned(asr))) <= data_bus;
+
+      -- from bus to pmem(res) 
       elsif FROM_BUS = "1100" then
         pmem(to_integer(unsigned(res))) <= data_bus;
+
+      -- from pmem(asr) to pmem_asr (can be put on bus next clock cycle)
       elsif TO_BUS = "0011" then
         pmem_asr <= pmem(to_integer(unsigned(asr)));
+
+      -- from pmem(res) to pmem_res (can be put on bus next clock cycle)
       elsif TO_BUS = "1100" then
         pmem_res <= pmem(to_integer(unsigned(res)));
 
@@ -839,7 +848,7 @@ begin  -- Behavioral
         score <= 0;
         score_counter <= 0;
 
-      -- keep counting score up every 1/10th of a second
+      -- Keep counting score up every 1/10th of a second
       elsif score_counter = SCORE_LATENCY then
         score <= score + 1;
         score_counter <= 0;
@@ -854,6 +863,7 @@ begin  -- Behavioral
   process(clk)
   begin
     if rising_edge(clk) then
+      
       -- from bus to res
       if FROM_BUS = "0101" then
         res <= data_bus;
