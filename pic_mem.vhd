@@ -41,12 +41,17 @@ architecture Behavioral of pic_mem is
   
   constant TILE_SIZE : integer := 8;
   constant SPRITE_SIZE : integer := 32;
-  
+
+
+  -- The grid which makes up the terrain of the game
   -- 8x8 Tile grid (1024 / 8) * (480 / 8) = 128 * 60 = 4800 => 4096
   type grid_ram is array (0 to 7679) of std_logic_vector(0 downto 0);
   signal grid_mem : grid_ram := ("0",  others => "0");
 
-  -- 16x16 Sprite memory 16*16 = 256
+
+
+  
+  -- 16x16 Sprite memory 16*16 = 256  (This is the copter design)
   type sprite_ram is array (0 to 255) of std_logic_vector(7 downto 0);
   signal sprite_mem : sprite_ram := (x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",
                                      x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",x"00",
@@ -74,7 +79,8 @@ architecture Behavioral of pic_mem is
   signal tmp_tile_addr : integer;
   signal offset_x                : unsigned (10 downto 0);
 
-
+  -- after this many pixels have scrolled by the terrain will change
+  constant TERRAIN_CHANGE_LATENCY : integer := 8;  
 
   -- Grid building signals
   signal new_col, new_col_start, q, q_plus : std_logic;
@@ -104,6 +110,7 @@ architecture Behavioral of pic_mem is
 
 begin
 
+  
   offset_x <= (pixel_x + offset) mod 1024;
   grid_coord_x <= offset_x(10 downto 3);
   grid_coord_y <= pixel_y(9 downto 3);
@@ -155,6 +162,8 @@ begin
   end process;
 
   --pixel chooser
+  -- Sends the right pixel to out_pixel, sends collision signal
+  -- when the player overlaps with a non-transparent pixel in tile_grid
   process (clk)
   begin
     if rising_edge(clk) then
@@ -178,18 +187,18 @@ begin
 
 
 
- -- Offset counter thingy
-  terrain_change <= '1' when (offset mod 8) = 1 else
+ -- Sends a signal when the terrain should be updated 
+  terrain_change <= '1' when (offset mod TERRAIN_CHANGE_LATENCY) = 1 else
                     '0';
   
- process(clk)
- begin
-   if rising_edge(clk) then
-     q <= q_plus;
-   end if;
- end process;
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      q <= q_plus;
+    end if;
+  end process;
 
- q_plus <= '1' when (offset mod 8) = 0 else
+ q_plus <= '1' when (offset mod TERRAIN_CHANGE_LATENCY) = 0 else
            '0';
   
  new_col_start <= not q and q_plus;
@@ -198,17 +207,22 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
+
+      -- Check if it's time to start building a new column
       if new_col_start = '1' then
         new_col <= '1';
         current_row <= 0;
+
+      -- When at the last row (60) then disable grid building, reset row counter
       elsif current_row = 60 then
         current_row <= 0;
         new_col <= '0';
 
+      -- While grid building is enabled, place the correct tile type at the
+      -- current spot in the grid, depending on current height and gap
       elsif new_col = '1' then
         if current_row < height or current_row > (height + gap) then
-          grid_mem((((127 + (offset mod 1024)/8)) mod 128) + (128*current_row)) <= "1"; --let's go on a trip:
-                                                                            --grid_mem(((128 + (offset mod 128)) mod 128) *current_row) <= "1";
+          grid_mem((((127 + (offset mod 1024)/8)) mod 128) + (128*current_row)) <= "1";
         else
           grid_mem((((127 + (offset mod 1024)/8)) mod 128) + (128*current_row)) <= "0";
         end if;
