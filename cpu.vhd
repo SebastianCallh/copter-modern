@@ -18,7 +18,8 @@ entity CPU is
            gap                 : out integer := 60;
            height              : out integer := 0;
            terrain_change      : in std_logic;
-           speed               : out integer);
+           speed               : out integer;
+           score               : out std_logic_vector(15 downto 0));
     
  
 end CPU;
@@ -124,10 +125,14 @@ architecture Behavioral of CPU is
   signal PROGRESS_LATENCY : integer := 10000000;  -- 1/10th second (if clock at 100MHz)
 
   -- Score signals
-  signal score : integer := 0;         -- current score
   signal score_counter : integer := 0;
   signal SCORE_LATENCY : integer := 10000000;  -- 1/10th second (if clock at 100MHz)
 
+  signal ones : unsigned(3 downto 0) := (others => '0');
+  signal tens : unsigned(3 downto 0) := (others => '0');
+  signal hundreds : unsigned(3 downto 0) := (others => '0');
+  signal thousands : unsigned(3 downto 0) := (others => '0');
+  
   
   -- Alias
   alias TO_BUS : std_logic_vector(3 downto 0) is micro_instr(23 downto 20);     -- to bus
@@ -159,6 +164,7 @@ architecture Behavioral of CPU is
   signal pmem : ram_t := (
 
 -- The processed assembly code is pasted here
+
 
 x"0000",
 x"0000",
@@ -243,7 +249,7 @@ x"0001",
 x"3420",
 x"0011",
 x"3620",
-x"00b4",
+x"012c",
 x"2320",
 x"005a",
 x"3420",
@@ -394,7 +400,7 @@ x"0008",
 x"3420",
 x"0009",
 x"3620",
-x"0039",
+x"003a",
 x"3920",
 x"014c",
 x"3420",
@@ -500,7 +506,6 @@ x"3B00",
 x"3320",
 x"003e",
 x"FF00",
-
 
 
 others => "0000000000000000");
@@ -646,6 +651,12 @@ begin  -- Behavioral
   -- Speed
   speed <= speed_internal;
 
+
+  -- Score
+  score(15 downto 12) <= std_logic_vector(thousands);
+  score(11 downto 8) <= std_logic_vector(hundreds);
+  score(7 downto 4) <= std_logic_vector(tens);
+  score(3 downto 0) <= std_logic_vector(ones);
 
   -- Update 
   process(clk)
@@ -845,13 +856,48 @@ begin  -- Behavioral
     if rising_edge(clk) then
       -- Reset score if there is a collision or if the game is reset
       if reset = '1' or collision = '1' then
-        score <= 0;
+        thousands <= (others => '0');
+        hundreds <= (others => '0');
+        tens <= (others => '0');
+        ones <= (others => '0');
         score_counter <= 0;
 
       -- Keep counting score up every 1/10th of a second
       elsif score_counter = SCORE_LATENCY then
-        score <= score + 1;
         score_counter <= 0;
+        if ones = "1001" then
+          if tens = "1001" then
+            if hundreds = "1001" then
+
+              -- resets score if score is 9999
+              if thousands = "1001" then
+                thousands <= (others => '0');
+                hundreds <= (others => '0');
+                tens <= (others => '0');
+                ones <= (others => '0');
+
+              else
+                thousands <= thousands + 1;
+                hundreds <= (others => '0');
+                tens <= (others => '0');
+                ones <= (others => '0');
+              end if;
+              
+            else
+              hundreds <= hundreds + 1;
+              tens <= (others => '0');
+              ones <= (others => '0');
+            end if;
+            
+          else
+            tens <= tens + 1;
+            ones <= (others => '0');
+          end if;
+  
+        else
+          ones <= ones + 1;
+        end if;
+        
       else
         score_counter <= score_counter + 1;
       end if;

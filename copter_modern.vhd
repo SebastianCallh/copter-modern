@@ -68,7 +68,8 @@ architecture Behavioral of copter_modern is
            gap                 : out integer;
            height              : out integer;
            terrain_change      : in std_logic;
-           speed               : out integer);
+           speed               : out integer;
+           score               : out std_logic_vector(15 downto 0));
     
   end component;
 	
@@ -96,11 +97,17 @@ architecture Behavioral of copter_modern is
   signal        terrain_change_s : std_logic;
   signal        speed_s         : integer;
 
+  
+  
   signal        seg_cnt         : unsigned(15 downto 0) := (others => '0');
   signal        points          : std_logic_vector(15 downto 0) := "0000000100100011";
+  signal        points_prev     : std_logic_vector(15 downto 0);
   signal        segments        : std_logic_vector(7 downto 0) := (others => '0');
   signal        seg_val         : std_logic_vector(3 downto 0) := (others => '0');
   signal        seg_dis         : std_logic_vector(3 downto 0) := (others => '0');
+  constant      POINTS_LATENCY  : integer := 300000000;
+  signal        points_counter  : integer;
+  signal        point_wait      : std_logic := '0';
   
 begin
 
@@ -141,7 +148,8 @@ begin
                     gap=>gap_s,
                     height=>height_s,
                     terrain_change=>terrain_change_s,
-                    speed=>speed_s);
+                    speed=>speed_s,
+                    score=>points);
 
   --7-seg point counter
   
@@ -157,10 +165,10 @@ begin
   end process;
 
   with seg_cnt(15 downto 14) select seg_val <=
-       points(15 downto 12) when "00",
-       points(11 downto 8) when "01",
-       points(7 downto 4) when "10",
-       points(3 downto 0) when others;
+       points_prev(15 downto 12) when "00",
+       points_prev(11 downto 8) when "01",
+       points_prev(7 downto 4) when "10",
+       points_prev(3 downto 0) when others;
   
   process(clk)
   begin
@@ -172,10 +180,10 @@ begin
          when "0011" => segments <= "10110000";
          when "0100" => segments <= "10011001";
          when "0101" => segments <= "10010010";
-         when "0110" => segments <= "11111000";
-         when "0111" => segments <= "10000000";
-         when "1000" => segments <= "10010000";
-         when "1001" => segments <= "10000101";
+         when "0110" => segments <= "10000010";
+         when "0111" => segments <= "11111000";
+         when "1000" => segments <= "10000000";
+         when "1001" => segments <= "10010000";
          when "1010" => segments <= "10001001";
          when "1011" => segments <= "11100001";
          when "1100" => segments <= "10110001";
@@ -195,6 +203,27 @@ begin
 
   seg <= segments;
   an <= seg_dis;
+
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if collision = '1' then
+        point_wait <= '1';
+        
+      elsif points_counter = POINTS_LATENCY then
+        points_counter <= 0;
+        point_wait <= '0';
+        
+      elsif point_wait = '1' then
+        points_counter <= points_counter + 1;
+
+      else
+        points_prev <= points;
+      end if;
+        
+    end if;
+  end process;
+
   
 end Behavioral;
 

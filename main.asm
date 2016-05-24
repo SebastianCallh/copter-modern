@@ -37,7 +37,7 @@ GAME_L	CMP 1 P_UPD    "check if player pos should update"
 	JMP GAME_L     "else, back to gameloop"
 INC_SPD	LPRG 0
 	ADD 1 PRG_CNT
-	CMP 180 SPD    "check current speed"
+	CMP 300 SPD    "check current speed"
 	BN DEC_GAP     "if negative, decrease gap"
 	SUB 10 SPD     "else increase speed"
 DEC_GAP	CMP 10 PRG_CNT "check progress counter"
@@ -86,7 +86,7 @@ INCR	CMP 1 HEIGHT
 	JMP GAME_L
 DECR	MV &HEIGHT T_HEIGHT
 	ADD &GAP T_HEIGHT
-	CMP 57 T_HEIGHT
+	CMP 58 T_HEIGHT
 	BP MV_UP
 	ADD 1 HEIGHT
 	UPD
