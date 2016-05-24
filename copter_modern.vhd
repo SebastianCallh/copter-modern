@@ -10,6 +10,8 @@ use IEEE.NUMERIC_STD.ALL;               -- IEEE library for the unsigned type
 entity copter_modern is
   port ( clk	                : in std_logic;                         -- system clock
 	 rst                    : in std_logic;                         -- reset
+         seg                    : out std_logic_vector(7 downto 0);     --7-segment display
+         an                     : out std_logic_vector(3 downto 0);
 	 Hsync	                : out std_logic;                        -- horizontal sync
 	 Vsync	                : out std_logic;                        -- vertical sync
 	 vgaRed	                : out std_logic_vector(2 downto 0);     -- VGA red
@@ -93,6 +95,12 @@ architecture Behavioral of copter_modern is
   signal        height_s        : integer;
   signal        terrain_change_s : std_logic;
   signal        speed_s         : integer;
+
+  signal        seg_pos         : unsigned(1 downto 0) := "00";
+  signal        points          : std_logic_vector(15 downto 0) := (others => '0');
+  signal        segments        : std_logic_vector(7 downto 0) := (others => '0');
+  signal        seg_val         : std_logic_vector(3 downto 0) := (others => '0');
+  signal        seg_dis         : std_logic_vector(3 downto 0) := (others => '0');
   
 begin
 
@@ -134,6 +142,59 @@ begin
                     height=>height_s,
                     terrain_change=>terrain_change_s,
                     speed=>speed_s);
+
+  --7-seg point counter
+  
+  process(clk)                          --2 bit counter
+  begin
+    if rising_edge(clk) then
+      if seg_pos = "11" then
+        seg_pos <= "00";
+      else
+        seg_pos <= (seg_pos + 1);
+      end if;
+    end if;
+  end process;
+
+  with seg_pos select seg_val <=
+       points(15 downto 12) when "00",
+       points(11 downto 8) when "01",
+       points(7 downto 4) when "10",
+       points(3 downto 0) when others;
+  
+  process(clk)
+  begin
+    if rising_edge(clk) then 
+     case seg_val is
+         when "0000" => segments <= "10000001";
+         when "0001" => segments <= "11001111";
+         when "0010" => segments <= "10010010";
+         when "0011" => segments <= "10000110";
+         when "0100" => segments <= "11001100";
+         when "0101" => segments <= "10100100";
+         when "0110" => segments <= "10100000";
+         when "0111" => segments <= "10001111";
+         when "1000" => segments <= "10000000";
+         when "1001" => segments <= "10000100";
+         when "1010" => segments <= "10001000";
+         when "1011" => segments <= "11100000";
+         when "1100" => segments <= "10110001";
+         when "1101" => segments <= "11000010";
+         when "1110" => segments <= "10110000";
+         when others => segments <= "10111000";
+    end case;
+    case seg_pos is
+         when "00" => seg_dis <= "0111";
+         when "01" => seg_dis <= "1011";
+         when "10" => seg_dis <= "1101";
+         when others => seg_dis <= "1110";
+       end case;
+                        
+    end if;
+  end process;
+
+  seg <= segments;
+  an <= seg_dis;
   
 end Behavioral;
 
