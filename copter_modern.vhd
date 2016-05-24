@@ -96,7 +96,7 @@ architecture Behavioral of copter_modern is
   signal        terrain_change_s : std_logic;
   signal        speed_s         : integer;
 
-  signal        seg_pos         : unsigned(1 downto 0) := "00";
+  signal        seg_cnt         : unsigned(15 downto 0) := (others => '0');
   signal        points          : std_logic_vector(15 downto 0) := "0000000100100011";
   signal        segments        : std_logic_vector(7 downto 0) := (others => '0');
   signal        seg_val         : std_logic_vector(3 downto 0) := (others => '0');
@@ -145,18 +145,18 @@ begin
 
   --7-seg point counter
   
-  process(clk)                          --2 bit counter
+  process(clk)                          --16-bit counter
   begin
     if rising_edge(clk) then
-      if seg_pos = "11" then
-        seg_pos <= "00";
+      if seg_cnt = "1111111111111111" then
+        seg_cnt <= (others => '0');
       else
-        seg_pos <= (seg_pos + 1);
+        seg_cnt <= (seg_cnt + 1);
       end if;
     end if;
   end process;
 
-  with seg_pos select seg_val <=
+  with seg_cnt(15 downto 14) select seg_val <=
        points(15 downto 12) when "00",
        points(11 downto 8) when "01",
        points(7 downto 4) when "10",
@@ -183,7 +183,7 @@ begin
          when "1110" => segments <= "10110001";
          when others => segments <= "10111001";
     end case;
-    case seg_pos is
+    case seg_cnt(15 downto 14) is
          when "00" => seg_dis <= "0111";
          when "01" => seg_dis <= "1011";
          when "10" => seg_dis <= "1101";
