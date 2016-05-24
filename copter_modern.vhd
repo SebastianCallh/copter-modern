@@ -97,8 +97,8 @@ architecture Behavioral of copter_modern is
   signal        speed_s         : integer;
 
   signal        seg_pos         : unsigned(1 downto 0) := "00";
-  signal        points          : std_logic_vector(15 downto 0) := (others => '0');
-  signal        segments        : std_logic_vector(0 to 7) := (others => '0');
+  signal        points          : std_logic_vector(15 downto 0) := "0000000100100011";
+  signal        segments        : std_logic_vector(7 downto 0) := (others => '0');
   signal        seg_val         : std_logic_vector(3 downto 0) := (others => '0');
   signal        seg_dis         : std_logic_vector(3 downto 0) := (others => '0');
   
@@ -166,22 +166,22 @@ begin
   begin
     if rising_edge(clk) then 
      case seg_val is
-         when "0000" => segments <= "10000001";
-         when "0001" => segments <= "11001111";
-         when "0010" => segments <= "00010011";
-         when "0011" => segments <= "00000111";
-         when "0100" => segments <= "01001101";
-         when "0101" => segments <= "00100101";
-         when "0110" => segments <= "00100001";
-         when "0111" => segments <= "10001111";
-         when "1000" => segments <= "00000001";
-         when "1001" => segments <= "00000101";
-         when "1010" => segments <= "00001001";
-         when "1011" => segments <= "01100001";
+         when "0000" => segments <= "11000000";
+         when "0001" => segments <= "11111001";
+         when "0010" => segments <= "10100100";
+         when "0011" => segments <= "10110000";
+         when "0100" => segments <= "10011001";
+         when "0101" => segments <= "10010010";
+         when "0110" => segments <= "11111000";
+         when "0111" => segments <= "10000000";
+         when "1000" => segments <= "10010000";
+         when "1001" => segments <= "10000101";
+         when "1010" => segments <= "10001001";
+         when "1011" => segments <= "11100001";
          when "1100" => segments <= "10110001";
-         when "1101" => segments <= "01000011";
-         when "1110" => segments <= "00110001";
-         when others => segments <= "00111001";
+         when "1101" => segments <= "11000011";
+         when "1110" => segments <= "10110001";
+         when others => segments <= "10111001";
     end case;
     case seg_pos is
          when "00" => seg_dis <= "0111";
