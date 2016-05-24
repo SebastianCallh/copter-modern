@@ -8,7 +8,7 @@ use IEEE.NUMERIC_STD.ALL;               -- IEEE library for the unsigned type
 
 
 entity CPU is
-    port ( clk                 : in std_logic;    -- systen clock
+    port ( clk                 : in std_logic;    -- Systen clock
            collision           : in std_logic;
            reset               : in std_logic;
            player_x            : out integer;
@@ -93,7 +93,7 @@ architecture Behavioral of CPU is
   --ran_gen signals
   signal ran_nr : std_logic_vector(31 downto 0) := (others => '0');
   signal ran_bit : std_logic;
-  -- init value for new_ran is seed
+  -- Initial value for new_ran is seed
   signal new_ran : std_logic_vector(31 downto 0) := "10101010001010110010110001010010";
                                                                       
   
@@ -179,18 +179,19 @@ x"0000",
 x"0000",
 x"0000",
 x"0000",
+x"0000",
 x"3420",
 x"0000",
 x"1620",
-x"0112",
+x"010d",
 x"3420",
 x"0001",
 x"1620",
-x"00ea",
+x"00f5",
 x"3420",
 x"0002",
 x"1620",
-x"0143",
+x"013e",
 x"4300",
 x"3420",
 x"0004",
@@ -226,41 +227,51 @@ x"000c",
 x"3620",
 x"0001",
 x"1F20",
-x"0065",
+x"0070",
 x"3D20",
 x"000a",
 x"1F20",
-x"0049",
+x"004a",
 x"3320",
-x"003d",
+x"003e",
 x"4720",
 x"0000",
+x"3420",
+x"0013",
+x"1720",
+x"0001",
 x"3420",
 x"0011",
 x"3620",
 x"012c",
 x"2320",
-x"003d",
+x"005a",
 x"3420",
 x"0011",
 x"1B20",
-x"0032",
-x"3320",
-x"003d",
-x"4720",
+x"000a",
+x"3420",
+x"0013",
+x"3620",
+x"000a",
+x"2120",
+x"003e",
+x"3420",
+x"0013",
+x"1620",
 x"0000",
 x"3420",
 x"0008",
 x"3620",
-x"0001",
+x"0010",
 x"2320",
-x"003d",
+x"003e",
 x"3420",
 x"0008",
 x"1B20",
 x"0001",
 x"3320",
-x"003d",
+x"003e",
 x"3420",
 x"000c",
 x"1620",
@@ -270,13 +281,13 @@ x"000d",
 x"3620",
 x"0000",
 x"1F20",
-x"007f",
+x"008a",
 x"3420",
 x"000e",
 x"3620",
 x"0000",
 x"1F20",
-x"009b",
+x"00a6",
 x"3420",
 x"000d",
 x"1620",
@@ -286,19 +297,19 @@ x"000e",
 x"1620",
 x"0000",
 x"3320",
-x"003d",
+x"003e",
 x"3420",
 x"0005",
 x"3620",
 x"01c2",
 x"3920",
-x"003d",
+x"003e",
 x"3420",
 x"0010",
 x"3620",
 x"0005",
 x"2120",
-x"00b7",
+x"00c2",
 x"3420",
 x"0010",
 x"1620",
@@ -308,25 +319,25 @@ x"0006",
 x"3620",
 x"0003",
 x"1F20",
-x"00b7",
+x"00c2",
 x"3420",
 x"0006",
 x"1720",
 x"0001",
 x"3320",
-x"00b7",
+x"00c2",
 x"3420",
 x"0005",
 x"3620",
 x"0003",
 x"2320",
-x"003d",
+x"003e",
 x"3420",
 x"0010",
 x"3620",
 x"0005",
 x"2120",
-x"00b7",
+x"00c2",
 x"3420",
 x"0010",
 x"1620",
@@ -336,13 +347,13 @@ x"0006",
 x"3620",
 x"fffd",
 x"1F20",
-x"00b7",
+x"00c2",
 x"3420",
 x"0006",
 x"1B20",
 x"0001",
 x"3320",
-x"00b7",
+x"00c2",
 x"3420",
 x"0010",
 x"1720",
@@ -357,13 +368,13 @@ x"1620",
 x"0000",
 x"4800",
 x"3320",
-x"003d",
+x"003e",
 x"3420",
 x"0007",
 x"3620",
 x"0001",
 x"1F20",
-x"014b",
+x"0147",
 x"3420",
 x"0007",
 x"1B20",
@@ -371,7 +382,7 @@ x"0001",
 x"4800",
 x"3B00",
 x"3320",
-x"003d",
+x"003e",
 x"3420",
 x"0009",
 x"1660",
@@ -385,7 +396,7 @@ x"0009",
 x"3620",
 x"0039",
 x"3920",
-x"014b",
+x"014c",
 x"3420",
 x"0007",
 x"1720",
@@ -393,7 +404,7 @@ x"0001",
 x"4800",
 x"3B00",
 x"3320",
-x"003d",
+x"003e",
 x"3520",
 x"000a",
 x"3420",
@@ -402,38 +413,22 @@ x"2720",
 x"0003",
 x"3420",
 x"000a",
-x"3620",
-x"0000",
-x"1F20",
-x"00c6",
+x"1760",
+x"0012",
 x"3420",
 x"000a",
 x"3620",
-x"0001",
-x"1F20",
-x"00d4",
-x"3320",
-x"014b",
+x"0002",
+x"2320",
+x"00d1",
 x"3420",
+x"000a",
+x"3620",
 x"0003",
-x"1620",
-x"0001",
-x"3420",
-x"0004",
-x"1620",
-x"00c8",
-x"3420",
-x"0005",
-x"1620",
-x"012c",
-x"3420",
-x"0006",
-x"1620",
-x"0001",
-x"3420",
-x"0004",
-x"1720",
-x"0006",
+x"3920",
+x"00df",
+x"3320",
+x"0146",
 x"3420",
 x"0003",
 x"1620",
@@ -456,13 +451,13 @@ x"000a",
 x"3620",
 x"0000",
 x"1F20",
-x"012f",
+x"012a",
 x"3420",
 x"000a",
 x"1B20",
 x"0001",
 x"3320",
-x"0123",
+x"011e",
 x"3420",
 x"0008",
 x"1620",
@@ -482,7 +477,7 @@ x"01f4",
 x"4800",
 x"3B00",
 x"3320",
-x"003d",
+x"003e",
 x"3420",
 x"0003",
 x"1620",
@@ -492,8 +487,18 @@ x"0005",
 x"1620",
 x"00c8",
 x"3B00",
+x"3420",
+x"0012",
+x"1620",
+x"0001",
+x"3B00",
+x"3420",
+x"0012",
+x"1620",
+x"0000",
+x"3B00",
 x"3320",
-x"003d",
+x"003e",
 x"FF00",
 
 
@@ -642,7 +647,7 @@ begin  -- Behavioral
   speed <= speed_internal;
 
 
-  -- update 
+  -- Update 
   process(clk)
   begin
     if rising_edge(clk) then
@@ -675,12 +680,8 @@ begin  -- Behavioral
       -- pc++
       elsif P_BIT = '1' then
         pc <= std_logic_vector(unsigned(pc) + 1);
-
-      -- enable interrupts
-      elsif SEQ = "1100" then
-        intr_enable <= '1';
-        
-      --handle interrupts
+       
+      -- Handle interrupts
       elsif SEQ = "1111" and intr_enable = '1' then        
 
         -- Store important information to be returned after the interrupt
@@ -694,7 +695,7 @@ begin  -- Behavioral
 
  
         -- Set pc to the correct interrupt vector and disables interrupts
-        -- (this will be reset
+        -- (interrupts are enabled after the specific interrupt code has been run)
         if reset_alert = '1' then
           intr_enable <= '0';
           reset_alert <= '0';
@@ -828,11 +829,32 @@ begin  -- Behavioral
     end if;
   end process;
 
+
+  -- score
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      -- Reset score if there is a collision or if the game is reset
+      if reset = '1' or collision = '1' then
+        score <= 0;
+        score_counter <= 0;
+
+      -- keep counting score up every 1/10th of a second
+      elsif score_counter = SCORE_LATENCY then
+        score <= score + 1;
+        score_counter <= 0;
+      else
+        score_counter <= score_counter + 1;
+      end if;
+    end if;
+  end process;
+  
   
   -- res
   process(clk)
   begin
     if rising_edge(clk) then
+      -- from bus to res
       if FROM_BUS = "0101" then
         res <= data_bus;
 
@@ -844,12 +866,16 @@ begin  -- Behavioral
     end if;
   end process;
 
-  -- ir
+  -- from bus to ir
   process(clk)
   begin
     if rising_edge(clk) then
+
+      -- from bus to ir(31->16)
       if FROM_BUS = "0110" then
         ir(31 downto 16) <= data_bus;
+
+      -- from bus to ir(15->0)  
       elsif FROM_BUS = "0111" then
         ir(15 downto 0) <= data_bus;
       end if;
@@ -857,7 +883,7 @@ begin  -- Behavioral
     end if;
   end process;
 
-  -- reg1
+  -- from bus to reg1
   process(clk)
   begin
     if rising_edge(clk) then
@@ -867,7 +893,7 @@ begin  -- Behavioral
     end if;
   end process;
 
-  -- reg2
+  -- from bus to reg2
   process(clk)
   begin
     if rising_edge(clk) then
@@ -877,7 +903,7 @@ begin  -- Behavioral
     end if;
   end process;
 
-  -- reg3
+  -- from bus to reg3
   process(clk)
   begin
     if rising_edge(clk) then
@@ -887,7 +913,7 @@ begin  -- Behavioral
     end if;
   end process;
 
-  -- reg4
+  -- from bus to reg4
   process(clk)
   begin
     if rising_edge(clk) then

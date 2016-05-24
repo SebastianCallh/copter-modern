@@ -17,6 +17,7 @@ PRG
 P_CNT
 SPD
 T_PREF
+PRG_CNT
 START	MV COLL COL_I  "Setting up interupts"
 	MV TERR TER_I
 	MV RESET RES_I
@@ -35,15 +36,17 @@ GAME_L	CMP 1 P_UPD    "check if player pos should update"
 	BEQ INC_SPD    "if so, increase speed"
 	JMP GAME_L     "else, back to gameloop"
 INC_SPD	LPRG 0
+	ADD 1 PRG_CNT
 	CMP 300 SPD    "check spd-300"
-	BN GAME_L      "if negative, return to gameloop"
-	SUB 50 SPD     "else remove 50 from speed"
-	JMP GAME_L     "jump to gameloop"
-GAP_DE	LPRG 0
-	CMP 1 GAP
-	BN GAME_L
-	SUB 1 GAP
-	JMP GAME_L
+	BN DEC_GAP     "if negative, decrease gap"
+	SUB 10 SPD     "else increase speed"
+DEC_GAP	CMP 10 PRG_CNT "check progress counter"
+	BNE GAME_L     "if not equal, return to gameloop"
+	MV 0 PRG_CNT   "else reset progress counter"
+	CMP 16 GAP     "compare gap to 16"
+	BN GAME_L      "if smaller (than 15) return to gameloop"
+	SUB 1 GAP      "else decrease gap by 1"
+	JMP GAME_L     "return to gameloop"
 UP_OR_D	MV 0 P_UPD
 	CMP 0 PRESS
 	BEQ P_DOWN
@@ -76,7 +79,7 @@ UPD_P	ADD 1 P_CNT
 	UPD
 	JMP GAME_L
 INCR	CMP 1 HEIGHT
-	BEQ RETURN
+	BEQ MV_DOWN
 	SUB 1 HEIGHT
 	UPD
 	RFI
@@ -84,23 +87,19 @@ INCR	CMP 1 HEIGHT
 DECR	MV &HEIGHT T_HEIGHT
 	ADD &GAP T_HEIGHT
 	CMP 57 T_HEIGHT
-	BP RETURN
+	BP MV_UP
 	ADD 1 HEIGHT
 	UPD
 	RFI
 	JMP GAME_L
 TERR	RAN RAND1     "save random number to rand"
 	AND 3 RAND1   "get two least significant bits of rand"
-	CMP 0 RAND1   "compare rand with 0"
-	BEQ INCR     "if rand = 0, increase terrain height"
-	CMP 1 RAND1   "compare rand with 1"
-	BEQ DECR     "if rand = 1, decrease terrain height"
-	JMP RETURN   "if rand /= 0 and rand /= 1 then continue gameloop without terrain change"
-	MV 1 RUNNING  "set the running flag to 1"
-	MV 200 P_X    "set player x"
-	MV 300 P_Y    "set player y"
-	MV 1 P_DY     "set player dy"
-	ADD 6 P_X
+	ADD &T_PREF RAND1
+	CMP 2 RAND1   "compare rand1 with 0"
+	BN INCR       "if rand1 < 2, increase terrain height"
+	CMP 3 RAND1   "compare rand1 with 3"
+	BP DECR       "if rand > 2, decrease terrain height"
+	JMP RETURN    "else return to gameloop without terrain change"
 COLL	MV 1 RUNNING
 	MV 0 HEIGHT
 	MV 65 GAP
@@ -120,5 +119,9 @@ RET	MV 30 GAP
 RESET	MV 1 RUNNING
 	MV 200 P_Y
 RETURN	RFI
+MV_DOWN	MV 1 T_PREF
+	RFI
+MV_UP	MV 0 T_PREF
+	RFI
 	JMP GAME_L
 END	DIE           "else die"
