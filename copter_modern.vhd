@@ -204,20 +204,27 @@ begin
   seg <= segments;
   an <= seg_dis;
 
+
+  -- Show points on display for a short while after collision
   process(clk)
   begin
     if rising_edge(clk) then
+
+      -- If collision, stop updating the points
       if collision = '1' then
         point_wait <= '1';
         points_counter <= 0;
-        
+
+      -- If waited, reset points_counter and allow showing current points
       elsif points_counter > POINTS_LATENCY then
         points_counter <= 0;
         point_wait <= '0';
-        
+
+      -- While waiting, keep counting up until points_counter reaches POINTS_LATENCY
       elsif point_wait = '1' then
         points_counter <= points_counter + 1;
 
+      -- If not waiting, make sure points_prev is updated to show points
       else
         points_prev <= points;
       end if;

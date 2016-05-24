@@ -128,6 +128,7 @@ architecture Behavioral of CPU is
   signal score_counter : integer := 0;
   signal SCORE_LATENCY : integer := 10000000;  -- 1/10th second (if clock at 100MHz)
 
+  -- Score counters
   signal ones : unsigned(3 downto 0) := (others => '0');
   signal tens : unsigned(3 downto 0) := (others => '0');
   signal hundreds : unsigned(3 downto 0) := (others => '0');
@@ -150,7 +151,7 @@ architecture Behavioral of CPU is
   constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"0000";
   constant TERRAIN_CHANGE_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"0001";
   -- Same as coll for now
-  constant RESET_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"0000";
+  constant RESET_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"0002";
 
   
   -- Player update frequency
@@ -164,8 +165,6 @@ architecture Behavioral of CPU is
   signal pmem : ram_t := (
 
 -- The processed assembly code is pasted here
-
-
 x"0000",
 x"0000",
 x"0000",
@@ -197,7 +196,7 @@ x"00f5",
 x"3420",
 x"0002",
 x"1620",
-x"013e",
+x"010d",
 x"4300",
 x"3420",
 x"0004",

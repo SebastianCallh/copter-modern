@@ -20,7 +20,7 @@ T_PREF
 PRG_CNT
 START	MV COLL COL_I  "setting up interupt vectors"
 	MV TERR TER_I
-	MV RESET RES_I
+	MV COLL RES_I  "set to the same as collision as they should do the same thing"
 	EINT           "enable interrupts"
 GAME_S	MV 150 P_X     "setup gamestart"
 	MV 200 P_Y
