@@ -516,7 +516,7 @@ others => "0000000000000000");
 -- Here are all the micro programs
 
     
-    "000000000000111101000100",  -- check for interrupts, ASR <= PC
+    "000000000000111101000001",  -- check for interrupts, ASR <= PC
     "000100100000000000000000",  -- asr <= pc
     "001100000000000000000000",  -- fetch instruction (only 16 bits)
     "001101100000000000000000",  -- and check for 32 bit instruction
@@ -602,23 +602,18 @@ others => "0000000000000000");
     "111000000000000000000000",  -- 3D:pcmp     fetch progress
     "111001000000000000000000",  --             alu_res <= progress
     "001000000010001100000000",  --             alu_res <= alu_res - asr
-
-    "111000000000000000000000",  -- 40:pmod     fetch progress
-    "111001000000000000000000",  --             alu_res <= progress 
-    "110000000111001100000000",  --             alu_res <= alu_res mod pmem(res), u_pc <= 0
-
     
-    "000000000000110000000000",  -- 43:eint     enable interrupts
+    "000000000000110000000000",  -- 40:eint     enable interrupts
 
-    "000100100000000000000000",  -- 44:intr     asr <= pc
+    "000100100000000000000000",  -- 41:intr     asr <= pc
     "001100000000000000000000",  --             fetch pmem(asr)
     "001100010000010000000001",  --             pc <= pmem(asr), micro_pc <= 1   
 
-    "001011100000000000000000",  -- 47:lprg     progress <= asr
+    "001011100000000000000000",  -- 44:lprg     progress <= asr
     
     -- NOTE: place all new micro programs above upd, in case update needs to...update
     
-    "000000000000000000000001",  -- 48:upd      player_x <= pmem(x_pos)
+    "000000000000000000000001",  -- 45:upd      player_x <= pmem(x_pos)
     "000000000000000000000010",  --             player_y <= pmem(y_pos)
     "000000000000000000000011",  --             height <= pmem(height_pos)
     "000000000000000000000100",  --             gap <= pmem(gap_pos)
@@ -626,15 +621,7 @@ others => "0000000000000000");
     "000000000000001100000000",  --             micro_pc <= 0
     
     
-    "000000000000000000000000",  --             c
-    "000000000000000000000000",  --             c
-    "000000000000000000000000",  --             c
-
-    "000000000000000000000000",  -- XX:INS      comment         
-    "000000000000000000000000",  --             c    
-    
- --   "", --
-    others => "000000000000000000000000");
+     others => "000000000000000000000000");
 
   
   -- ROM (mod) (Includes all 4 mods, need to be updated with correct micro-addresses)
