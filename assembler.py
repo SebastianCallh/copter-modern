@@ -1,4 +1,5 @@
 import sys
+import copy
 
 #Splits labels from instructions on tabs, so the code must be indented using tabs
 #Splits instruction from args using spaces, so they must be separated using spaces
@@ -25,6 +26,9 @@ def to_bin(n, s):
 def make_instr(i):
     return 'x\"' + str(i) + '",\n'
 
+def negative(n):
+    return str(int('FFFF', 16) + int(n) + 1)
+
 FETCH_NEXT = '100000'
 DONT_FETCH_NEXT = '00'
 NO_ARGS = '0000'
@@ -44,41 +48,63 @@ op_code = {
     'RES' : '34',
     'NOT' : '25',
     'AND' : '27',
-    'OR' : '2B',
+    'OR'  : '2B',
     'XOR' : '2F',
-    'ALU' : '35',
-    'UPD' : '36',
-    'RAN' : '3B',
-    'INC' : '3C',
-    'CMP' : '40',
-    'DEC' : '43',
-
+    'RAN' : '35',
+    'CMP' : '36',
+    'BP'  : '39',
+    'RFI' : '3B',
+    'PCMP': '3D',
+    'PMOD': '40',
+    'EINT': '43',
+    'LPRG': '47',
+    'UPD' : '48',
     'DIE' : 'FF'
     }
-has_one_arg = ['BEQ', 'BNE', 'BN', 'JMP', 'RES', 'INC', 'DEC', 'RAN']
+has_one_arg = ['BEQ', 'BNE', 'BN', 'JMP', 'RES', 'RAN', 'BP', 'PCMP', 'LPRG']
 has_two_args = ['MV', 'ADD', 'SUB', 'NOT', 'OR', 'XOR',  'CMP', 'AND' ]
 prefixes = ['&', '*']
 
 lines = []
+lines_cp = []
 with open(sys.argv[1]) as f:
     lines = f.readlines()
-
+ 
 line_nr = 0;
 labels = {}
 instructions = ''
+lines_cp = copy.deepcopy(lines)
 
-for line in lines:
-    split_string = line.split('\t')
-    label = split_string[0]
-    
-    
-    #Save all labels' line number for jumps
+# Get all labels numbered correctly
+for line_ in lines_cp:
+    split_str = line_.split('\t')
+    label = split_str[0]
+
     if label:
         labels[label.replace('\n', '')] = str(line_nr)
 
+    if len(split_str) == 1:
+        line_nr += 1
+        continue
+
+    op_and_args = split_str[1].split()
+    op = op_and_args[0]
+
+    if op in has_one_arg or op in has_two_args:
+        if op in has_two_args:
+            line_nr += 2
+        line_nr +=2
+    else:
+        line_nr += 1
+
+
+# Convert assembly to machine code
+for line in lines:
+    split_string = line.split('\t')
+    
+
     if len(split_string) == 1:
         instructions += make_instr(EMPTY_INSTR)
-        line_nr += 1
         continue
 
     op_and_args = split_string[1].split()
@@ -94,7 +120,10 @@ for line in lines:
         mods = ['10' if arg[0] is '*' else 
                 '01' if arg[0] is '&' else 
                 '00' for arg in args]
-
+        
+    #Handle negative integers
+    args = [negative(arg) if arg[0] is '-' else arg for arg in args]
+        
     #remove prefixes
     args = [arg[1:] if arg[0] in prefixes else arg for arg in args]
 
@@ -106,14 +135,13 @@ for line in lines:
         if op in has_two_args:
             instructions += make_instr(op_code['RES'] + to_hex(mods[1] + FETCH_NEXT, 2))
             instructions += make_instr(to_hex(to_bin(args[1], 16), 4))
-            line_nr += 2
         instructions += make_instr(op_code[op] + to_hex(mods[0] + FETCH_NEXT, 2))
         instructions += make_instr(to_hex(to_bin(args[0], 16), 4))
-        line_nr +=2
     else:
         instructions += make_instr(op_code[op] + to_hex('00' + DONT_FETCH_NEXT, 2))
-        line_nr += 1
+
+
 
 f = open('machine_code','w')
-f.write(instructions) 
+f.write(instructions)
 f.close()
