@@ -87,9 +87,7 @@ architecture Behavioral of CPU is
   signal alu_and : std_logic_vector(15 downto 0);
   signal alu_or : std_logic_vector(15 downto 0);
   signal alu_xor : std_logic_vector(15 downto 0);
-  signal alu_mod : std_logic_vector(15 downto 0);
-
-  signal alu_int : integer;
+ 
 
   --ran_gen signals
   signal ran_nr : std_logic_vector(31 downto 0) := (others => '0');
@@ -150,7 +148,6 @@ architecture Behavioral of CPU is
   -- Interrupt vectors
   constant COLLISION_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"0000";
   constant TERRAIN_CHANGE_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"0001";
-  -- Same as coll for now
   constant RESET_INTERRUPT_VECTOR : std_logic_vector(15 downto 0) := x"0002";
 
   
@@ -1075,10 +1072,7 @@ end process;
   alu_or <= alu_res or data_bus;
   alu_xor <= alu_res xor data_bus;
 
-  alu_int <= to_integer(unsigned(alu_res));
-  alu_mod <= std_logic_vector(to_unsigned(alu_int mod 4, 16));
-
-  
+ 
   -- alu_res
   process(clk)
   begin
@@ -1174,17 +1168,7 @@ end process;
           n_flag <= alu_xor(15);
           o_flag <= '0';
           c_flag <= '0';
-        when "111" => 
-          alu_res <= alu_mod;                                               --MOD
-          if alu_mod = "0000000000000000" then
-            z_flag <= '1';
-          else
-            z_flag <= '0';
-          end if;
-          n_flag <= '0';
-          o_flag <= '0';
-          c_flag <= '0';
-         
+
         when others =>
           if FROM_BUS = "0100" then
             alu_res <= data_bus;
