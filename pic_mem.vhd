@@ -125,9 +125,15 @@ begin
 
   -- The offset is how long into our tile grid we've traveller
   -- The grid loos every 1024 tiles
+
+  --Offset
   offset_x <= (pixel_x + offset) mod 1024;
+
+  --Grid coord
   grid_coord_x <= offset_x(10 downto 3);
   grid_coord_y <= pixel_y(9 downto 3);
+
+  --Sub pixel
   tile_sub_x <= offset_x(2 downto 0);
   tile_sub_y <= pixel_y(2 downto 0);
   tmp_tile_addr <= (conv_integer(tile_addr) * TILE_SIZE * TILE_SIZE) + (to_integer(tile_sub_y) * TILE_SIZE) + to_integer(tile_sub_x);
