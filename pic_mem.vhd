@@ -147,8 +147,9 @@ begin
           grid_mem(conv_integer(tile_y) * SCREEN_WIDTH +
                     conv_integer(tile_x)) <= data_in;
         end if;
+          tile_addr <= grid_mem((to_integer(grid_coord_y) * GRID_WIDTH) + to_integer(grid_coord_x));
       end if;
-      tile_addr <= grid_mem((to_integer(grid_coord_y) * GRID_WIDTH) + to_integer(grid_coord_x));
+
     end process;
  
   --tile memory

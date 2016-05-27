@@ -1,4 +1,9 @@
--- copter_modern
+--------------------------------------------------------------------------------
+-- VGA lab
+-- Anders Nilsson
+-- 16-dec-2015
+-- Version 1.0
+
 
 -- library declaration
 library IEEE;
@@ -72,18 +77,8 @@ architecture Behavioral of copter_modern is
            score               : out std_logic_vector(15 downto 0));
     
   end component;
-	
-  -- intermediate signals between PICT_MEM and VGA_MOTOR
-  --signal	out_pixel       : std_logic_vector(7 downto 0);         -- data
-  --signal	out_addr        : unsigned(10 downto 0);                -- address
 
-  -- intermediate signals between VGA_MOTOR and CPU
-  signal        pic_mem_we      : std_logic := '1';                     -- pic mem port 1 we
-  signal	tile_data       : std_logic_vector(7 downto 0);         -- tile type to save
-  
-  signal	tile_x          : std_logic_vector(9 downto 0);         -- tile-x where to save it
-  signal	tile_y          : std_logic_vector(8 downto 0);         -- tile-y where to save it
-  
+  -- intermediate signals between VGA_MOTOR and CPU  
   signal	player_x_s        : integer;                              -- players pixel-x
   signal	player_y_s        : integer;                              -- players pixel-y
 
